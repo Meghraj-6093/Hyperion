@@ -12,6 +12,8 @@ A starting point for building cross-platform apps. Covers Web, Desktop (Windows,
 
 ### Start Developing
 
+git clone (https://github.com/BhagirathsinhRana378/Hyperion.git)
+
 ```bash
 pnpm install
 pnpm dev
