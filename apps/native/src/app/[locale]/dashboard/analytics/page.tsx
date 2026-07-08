@@ -1,7 +1,14 @@
 "use client";
 
-import { AnalyticsPage } from "@workspace/core/pages/subpages/analytics-page";
+import { useRouter } from "@workspace/i18n/navigation";
+import { useEffect } from "react";
 
-export default function Analytics() {
-  return <AnalyticsPage />;
+export default function AnalyticsRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/workspace");
+  }, [router]);
+
+  return null;
 }
