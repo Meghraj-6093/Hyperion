@@ -17,7 +17,11 @@ export interface KanbanColumn {
 }
 
 interface KanbanState {
-  addCard: (columnId: string, title: string, description?: string) => KanbanCard;
+  addCard: (
+    columnId: string,
+    title: string,
+    description?: string
+  ) => KanbanCard;
   addColumn: (title: string) => KanbanColumn;
   cards: KanbanCard[];
   columns: KanbanColumn[];
@@ -25,7 +29,10 @@ interface KanbanState {
   deleteColumn: (id: string) => void;
   moveCard: (cardId: string, toColumnId: string, toIndex: number) => void;
   reorderCards: (columnId: string, cardIds: string[]) => void;
-  updateCard: (id: string, updates: Partial<Pick<KanbanCard, "description" | "title">>) => void;
+  updateCard: (
+    id: string,
+    updates: Partial<Pick<KanbanCard, "description" | "title">>
+  ) => void;
 }
 
 function generateId(): string {
@@ -41,7 +48,7 @@ const DEFAULT_COLUMNS: KanbanColumn[] = [
 
 export const useKanbanStore = create<KanbanState>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       addCard: (columnId: string, title: string, description = "") => {
         const card: KanbanCard = {
           columnId,
@@ -78,9 +85,11 @@ export const useKanbanStore = create<KanbanState>()(
         set((state) => {
           const cards = [...state.cards];
           const cardIndex = cards.findIndex((c) => c.id === cardId);
-          if (cardIndex === -1) return state;
+          if (cardIndex === -1) {
+            return state;
+          }
 
-          const card = cards[cardIndex]!;
+          const card = cards[cardIndex] as KanbanCard;
           cards.splice(cardIndex, 1);
           cards.splice(toIndex, 0, { ...card, columnId: toColumnId });
 
@@ -96,15 +105,20 @@ export const useKanbanStore = create<KanbanState>()(
           return { cards: [...otherCards, ...columnCards] };
         });
       },
-      updateCard: (id: string, updates: Partial<Pick<KanbanCard, "description" | "title">>) => {
+      updateCard: (
+        id: string,
+        updates: Partial<Pick<KanbanCard, "description" | "title">>
+      ) => {
         set((state) => ({
-          cards: state.cards.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+          cards: state.cards.map((c) =>
+            c.id === id ? { ...c, ...updates } : c
+          ),
         }));
       },
     }),
     {
       name: "hyperion-kanban",
       storage: createJSONStorage(() => localStorage),
-    },
-  ),
+    }
+  )
 );

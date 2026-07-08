@@ -3,14 +3,24 @@
 import { useMounted } from "@workspace/core/hooks/use-mounted";
 import { useWorkspaceStore } from "@workspace/core/stores/workspace-store";
 import { Button } from "@workspace/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Plus, Trash2, Zap } from "lucide-react";
 import { useState } from "react";
 
 export function WorkspacePage() {
   const mounted = useMounted();
-  const { createWorkspace, deleteWorkspace, setActiveWorkspace, workspaces, activeWorkspaceId } =
-    useWorkspaceStore();
+  const {
+    createWorkspace,
+    deleteWorkspace,
+    setActiveWorkspace,
+    workspaces,
+    activeWorkspaceId,
+  } = useWorkspaceStore();
   const [newName, setNewName] = useState("");
 
   if (!mounted) {
@@ -19,7 +29,9 @@ export function WorkspacePage() {
 
   const handleCreate = () => {
     const name = newName.trim();
-    if (!name) return;
+    if (!name) {
+      return;
+    }
     createWorkspace(name);
     setNewName("");
   };
@@ -35,10 +47,12 @@ export function WorkspacePage() {
         </div>
         <div className="flex gap-2">
           <input
-            className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 rounded-md border px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreate();
+              if (e.key === "Enter") {
+                handleCreate();
+              }
             }}
             placeholder="New workspace name..."
             value={newName}
@@ -54,7 +68,7 @@ export function WorkspacePage() {
         <div className="flex flex-1 items-center justify-center">
           <Card className="w-full max-w-md">
             <CardContent className="flex flex-col items-center gap-4 pt-6">
-              <Zap className="text-muted-foreground size-12" />
+              <Zap className="size-12 text-muted-foreground" />
               <div className="text-center">
                 <p className="font-medium">No workspaces yet</p>
                 <p className="text-muted-foreground text-sm">
@@ -75,7 +89,7 @@ export function WorkspacePage() {
               onClick={() => setActiveWorkspace(ws.id)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{ws.name}</CardTitle>
+                <CardTitle className="font-medium text-sm">{ws.name}</CardTitle>
                 <Button
                   className="size-8 p-0"
                   onClick={(e) => {

@@ -44,7 +44,7 @@ export const useTerminalStore = create<TerminalState>()(
           return {
             activePaneId:
               state.activePaneId === id
-                ? remaining[0]?.id ?? null
+                ? (remaining[0]?.id ?? null)
                 : state.activePaneId,
             panes: remaining,
           };
@@ -63,6 +63,6 @@ export const useTerminalStore = create<TerminalState>()(
     {
       name: "hyperion-terminals",
       storage: createJSONStorage(() => localStorage),
-    },
-  ),
+    }
+  )
 );

@@ -1,15 +1,16 @@
 "use client";
 
-import { useMounted } from "@workspace/core/hooks/use-mounted";
-import { useTerminalStore } from "@workspace/core/stores/terminal-store";
 import { TerminalPane } from "@workspace/core/components/terminal/terminal-pane";
 import { TerminalToolbar } from "@workspace/core/components/terminal/terminal-toolbar";
+import { useMounted } from "@workspace/core/hooks/use-mounted";
+import { useTerminalStore } from "@workspace/core/stores/terminal-store";
 import { useEffect } from "react";
 
 export function TerminalGrid() {
   const mounted = useMounted();
   const { activePaneId, createPane, panes, setActivePane } = useTerminalStore();
 
+  // biome-ignore lint: only create default pane on mount
   useEffect(() => {
     if (mounted && panes.length === 0) {
       createPane();

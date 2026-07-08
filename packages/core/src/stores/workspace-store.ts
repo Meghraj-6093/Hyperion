@@ -24,7 +24,7 @@ function generateId(): string {
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       activeWorkspaceId: null,
       createWorkspace: (name: string) => {
         const workspace: Workspace = {
@@ -44,7 +44,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           return {
             activeWorkspaceId:
               state.activeWorkspaceId === id
-                ? remaining[0]?.id ?? null
+                ? (remaining[0]?.id ?? null)
                 : state.activeWorkspaceId,
             workspaces: remaining,
           };
@@ -53,7 +53,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       renameWorkspace: (id: string, name: string) => {
         set((state) => ({
           workspaces: state.workspaces.map((w) =>
-            w.id === id ? { ...w, name } : w,
+            w.id === id ? { ...w, name } : w
           ),
         }));
       },
@@ -65,6 +65,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     {
       name: "hyperion-workspaces",
       storage: createJSONStorage(() => localStorage),
-    },
-  ),
+    }
+  )
 );

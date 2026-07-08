@@ -1,27 +1,35 @@
 "use client";
 
-import { useKanbanStore } from "@workspace/core/stores/kanban-store";
-import { KanbanColumn } from "@workspace/core/components/kanban/kanban-column";
+import type {
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
 import {
+  closestCorners,
   DndContext,
   DragOverlay,
   PointerSensor,
-  closestCorners,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { DragEndEvent, DragOverEvent, DragStartEvent } from "@dnd-kit/core";
-import { SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+} from "@dnd-kit/sortable";
+import { KanbanColumn } from "@workspace/core/components/kanban/kanban-column";
+import { useKanbanStore } from "@workspace/core/stores/kanban-store";
 import { useState } from "react";
 
 export function KanbanBoard() {
-  const { addColumn, cards, columns, deleteCard, deleteColumn, moveCard } = useKanbanStore();
+  const { addColumn, cards, columns, deleteColumn, moveCard } =
+    useKanbanStore();
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
-    }),
+    })
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -30,10 +38,14 @@ export function KanbanBoard() {
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over) {
+      return;
+    }
 
     const activeCard = cards.find((c) => c.id === String(active.id));
-    if (!activeCard) return;
+    if (!activeCard) {
+      return;
+    }
 
     const overColumn = columns.find((col) => col.id === String(over.id));
     const overCard = cards.find((c) => c.id === String(over.id));
@@ -54,13 +66,17 @@ export function KanbanBoard() {
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over) return;
+    if (!over) {
+      return;
+    }
 
     const activeCard = cards.find((c) => c.id === String(active.id));
     const overCard = cards.find((c) => c.id === String(over.id));
 
     if (activeCard && overCard && activeCard.columnId === overCard.columnId) {
-      const columnCards = cards.filter((c) => c.columnId === activeCard.columnId);
+      const columnCards = cards.filter(
+        (c) => c.columnId === activeCard.columnId
+      );
       const oldIndex = columnCards.findIndex((c) => c.id === activeCard.id);
       const newIndex = columnCards.findIndex((c) => c.id === overCard.id);
 
@@ -83,7 +99,10 @@ export function KanbanBoard() {
       onDragStart={handleDragStart}
       sensors={sensors}
     >
-      <SortableContext items={columns.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+      <SortableContext
+        items={columns.map((c) => c.id)}
+        strategy={horizontalListSortingStrategy}
+      >
         <div className="flex gap-4 overflow-x-auto p-4">
           {columns.map((column) => (
             <KanbanColumn
@@ -93,8 +112,9 @@ export function KanbanBoard() {
             />
           ))}
           <button
-            className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-fit w-72 shrink-0 items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-8 text-sm transition-colors"
+            className="flex h-fit w-72 shrink-0 items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-8 text-muted-foreground text-sm transition-colors hover:bg-accent hover:text-foreground"
             onClick={() => addColumn("New Column")}
+            type="button"
           >
             + Add Column
           </button>
@@ -103,10 +123,12 @@ export function KanbanBoard() {
 
       <DragOverlay>
         {activeCard ? (
-          <div className="bg-background w-72 rounded-md border p-2 shadow-lg opacity-90">
-            <p className="text-sm font-medium">{activeCard.title}</p>
+          <div className="w-72 rounded-md border bg-background p-2 opacity-90 shadow-lg">
+            <p className="font-medium text-sm">{activeCard.title}</p>
             {activeCard.description && (
-              <p className="text-muted-foreground text-xs">{activeCard.description}</p>
+              <p className="text-muted-foreground text-xs">
+                {activeCard.description}
+              </p>
             )}
           </div>
         ) : null}

@@ -14,10 +14,13 @@ export function TerminalToolbar() {
         {panes.map((pane) => (
           <button
             className={`flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors hover:bg-accent ${
-              activePaneId === pane.id ? "bg-accent text-foreground" : "text-muted-foreground"
+              activePaneId === pane.id
+                ? "bg-accent text-foreground"
+                : "text-muted-foreground"
             }`}
             key={pane.id}
             onClick={() => setActivePane(pane.id)}
+            type="button"
           >
             {pane.title}
             <SquareX
@@ -30,7 +33,12 @@ export function TerminalToolbar() {
           </button>
         ))}
       </div>
-      <Button className="ml-auto size-7 p-0" onClick={createPane} size="icon" variant="ghost">
+      <Button
+        className="ml-auto size-7 p-0"
+        onClick={createPane}
+        size="icon"
+        variant="ghost"
+      >
         <Plus className="size-4" />
       </Button>
     </div>

@@ -9,28 +9,40 @@ interface TerminalPaneProps {
   onFocus: () => void;
 }
 
+// biome-ignore lint: xterm types are complex, dynamic import
+type TerminalInstance = any;
+// biome-ignore lint: xterm addon types are complex, dynamic import
+type FitAddonInstance = any;
+
 export function TerminalPane({ id, isActive, onFocus }: TerminalPaneProps) {
   const mounted = useMounted();
   const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<any>(null);
-  const fitAddonRef = useRef<any>(null);
+  const termRef = useRef<TerminalInstance>(null);
+  const fitAddonRef = useRef<FitAddonInstance>(null);
 
+  // biome-ignore lint: dynamic import, only re-init on id change
   useEffect(() => {
-    if (!mounted || !containerRef.current) return;
+    if (!(mounted && containerRef.current)) {
+      return;
+    }
 
     let disposed = false;
+    let observer: ResizeObserver | undefined;
 
     async function init() {
       const { Terminal } = await import("@xterm/xterm");
       const { FitAddon } = await import("@xterm/addon-fit");
       const { WebLinksAddon } = await import("@xterm/addon-web-links");
 
-      if (disposed || !containerRef.current) return;
+      if (disposed || !containerRef.current) {
+        return;
+      }
 
       const term = new Terminal({
         cursorBlink: true,
         fontSize: 13,
-        fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        fontFamily:
+          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
         theme: {
           background: "#0a0a0a",
           cursor: "#a1a1aa",
@@ -56,33 +68,28 @@ export function TerminalPane({ id, isActive, onFocus }: TerminalPaneProps) {
 
       termRef.current = term;
       fitAddonRef.current = fitAddon;
+
+      observer = new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+          fitAddonRef.current?.fit();
+        });
+      });
+
+      if (containerRef.current) {
+        observer.observe(containerRef.current);
+      }
     }
 
     init();
 
     return () => {
       disposed = true;
+      observer?.disconnect();
       termRef.current?.dispose();
       termRef.current = null;
       fitAddonRef.current = null;
     };
   }, [id, mounted]);
-
-  useEffect(() => {
-    if (!fitAddonRef.current) return;
-
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        fitAddonRef.current?.fit();
-      });
-    });
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   if (!mounted) {
     return (
@@ -93,13 +100,22 @@ export function TerminalPane({ id, isActive, onFocus }: TerminalPaneProps) {
   }
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: xterm.js requires a div container
     <div
+      aria-label="Terminal pane"
       className={`flex flex-1 overflow-hidden ${
         isActive ? "ring-1 ring-primary" : ""
       }`}
       onClick={onFocus}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          onFocus();
+        }
+      }}
       ref={containerRef}
+      role="button"
       style={{ minHeight: 0 }}
+      tabIndex={0}
     />
   );
 }
