@@ -48,6 +48,9 @@
   },
   "Navigation": {
     "home": "Home",
+    "workspaces": "Workspaces",
+    "terminals": "Terminals",
+    "taskBoard": "Task Board",
     "dashboard": "Dashboard",
     "overview": "Overview",
     "analytics": "Analytics",

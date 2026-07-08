@@ -6,6 +6,8 @@ import {
   Github,
   Home,
   LayoutDashboard,
+  LayoutGrid,
+  LayoutList,
   LogOut,
   type LucideIcon,
   PieChart,
@@ -13,6 +15,7 @@ import {
   Send,
   Settings,
   Sparkles,
+  Terminal,
   User,
 } from "lucide-react";
 
@@ -96,6 +99,30 @@ export const navigationData: NavigationData = {
       isActive: true,
       items: [],
       translationKey: "home",
+    },
+    {
+      title: "Workspaces",
+      url: "/workspace",
+      icon: LayoutGrid,
+      isActive: false,
+      items: [],
+      translationKey: "workspaces",
+    },
+    {
+      title: "Terminals",
+      url: "/terminals",
+      icon: Terminal,
+      isActive: false,
+      items: [],
+      translationKey: "terminals",
+    },
+    {
+      title: "Task Board",
+      url: "/kanban",
+      icon: LayoutList,
+      isActive: false,
+      items: [],
+      translationKey: "taskBoard",
     },
     {
       title: "Dashboard",
