@@ -5,6 +5,7 @@ import { HotkeysDialog } from "@workspace/core/components/common/hotkeys-dialog"
 import { ProfileDrawer } from "@workspace/core/components/common/profile-drawer";
 import { AppHeader } from "@workspace/core/components/layout/app-header";
 import { AppSidebar } from "@workspace/core/components/layout/app-sidebar";
+import { PanelManager } from "@workspace/core/components/panels/panel-manager";
 import { navigationData } from "@workspace/core/config/navigation";
 import { useAppHotkeys } from "@workspace/core/hooks/use-app-hotkeys";
 import { ThemeProvider } from "@workspace/core/providers/theme-provider";
@@ -67,6 +68,7 @@ export function AppLayout({
           <HotkeysDialog />
           <CommandPalette navigate={navigate} />
           <ProfileDrawer user={navigationData.user} />
+          <PanelManager />
         </SidebarProvider>
       </TooltipProvider>
     </ThemeProvider>
