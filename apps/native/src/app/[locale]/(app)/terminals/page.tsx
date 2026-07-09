@@ -1,5 +1,14 @@
-import { TerminalsPage } from "@workspace/core/pages/terminals-page";
+"use client";
 
-export default function Terminals() {
-  return <TerminalsPage />;
+import { useRouter } from "@workspace/i18n/navigation";
+import { useEffect } from "react";
+
+export default function TerminalsRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/workspace");
+  }, [router]);
+
+  return null;
 }
