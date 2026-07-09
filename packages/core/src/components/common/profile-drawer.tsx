@@ -5,6 +5,8 @@ import {
   type UserNavItem,
 } from "@workspace/core/config/navigation";
 import { useDrawerHistory } from "@workspace/core/hooks/use-drawer-history";
+import { useNotificationStore } from "@workspace/core/stores/notification-store";
+import { usePanelStore } from "@workspace/core/stores/panel-store";
 import { useProfileDrawerStore } from "@workspace/core/stores/profile-drawer-store";
 import { useTranslations } from "@workspace/i18n";
 import {
@@ -30,6 +32,33 @@ export function ProfileDrawer({ user }: ProfileDrawerProps) {
   const { isOpen, setOpen } = useProfileDrawerStore();
   useDrawerHistory(isOpen, setOpen);
   const t = useTranslations("Navigation");
+  const openPanel = usePanelStore((s) => s.openPanel);
+  const openNotificationCenter = useNotificationStore((s) => s.setOpen);
+
+  const handleSelect = (translationKey: string) => {
+    setOpen(false);
+
+    // Map translation keys to panel states
+    switch (translationKey) {
+      case "upgradeToPro":
+        openPanel("upgrade");
+        break;
+      case "account":
+        openPanel("account");
+        break;
+      case "billing":
+        openPanel("billing");
+        break;
+      case "notifications":
+        // Delay opening to prevent layout/focus collisions with closing mobile Drawer
+        setTimeout(() => {
+          openNotificationCenter(true);
+        }, 150);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <Drawer onOpenChange={setOpen} open={isOpen}>
@@ -60,7 +89,7 @@ export function ProfileDrawer({ user }: ProfileDrawerProps) {
                   <Button
                     className="justify-start"
                     key={item.translationKey}
-                    onClick={() => setOpen(false)}
+                    onClick={() => handleSelect(item.translationKey)}
                     variant="ghost"
                   >
                     <Icon strokeWidth={2} />

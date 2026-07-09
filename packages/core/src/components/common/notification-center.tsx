@@ -4,6 +4,7 @@ import {
   type NotificationItem,
   notifications,
 } from "@workspace/core/config/notifications";
+import { useNotificationStore } from "@workspace/core/stores/notification-store";
 import { useTranslations } from "@workspace/i18n";
 import {
   Avatar,
@@ -36,9 +37,10 @@ export function NotificationCenter() {
   const t = useTranslations("NotificationCenter");
   const unreadNotifications = notifications.filter((item) => item.unread);
   const hasUnread = unreadNotifications.length > 0;
+  const { isOpen, setOpen } = useNotificationStore();
 
   return (
-    <Popover>
+    <Popover onOpenChange={setOpen} open={isOpen}>
       <PopoverTrigger asChild={true}>
         <Button
           aria-label="Notifications"

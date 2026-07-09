@@ -1,7 +1,14 @@
 "use client";
 
-import { OverviewPage } from "@workspace/core/pages/subpages/overview-page";
+import { useRouter } from "@workspace/i18n/navigation";
+import { useEffect } from "react";
 
-export default function Overview() {
-  return <OverviewPage />;
+export default function OverviewRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/workspace");
+  }, [router]);
+
+  return null;
 }
