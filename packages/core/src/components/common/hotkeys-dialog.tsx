@@ -29,7 +29,7 @@ function HotkeyRow({ hotkey }: { hotkey: HotkeyDefinition }) {
   const isSequence = hotkey.keys.includes(">");
 
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between rounded-md px-2 py-1.5 transition-colors hover:bg-muted/40">
       <span className="text-sm">{t(hotkey.translationKey)}</span>
       <KbdGroup className="gap-0.5">
         {keys.map((key, i) => (

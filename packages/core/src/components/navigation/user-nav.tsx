@@ -3,6 +3,8 @@
 import { useClerk, useUser } from "@clerk/clerk-react";
 
 import { navigationData } from "@workspace/core/config/navigation";
+import { useNotificationStore } from "@workspace/core/stores/notification-store";
+import { usePanelStore } from "@workspace/core/stores/panel-store";
 import { useTranslations } from "@workspace/i18n";
 import {
   Avatar,
@@ -39,6 +41,8 @@ export function UserNav({ user: defaultUser }: UserNavProps) {
   const t = useTranslations("Navigation");
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const openPanel = usePanelStore((s) => s.openPanel);
+  const openNotificationCenter = useNotificationStore((s) => s.setOpen);
 
   const displayUser =
     isLoaded && user
@@ -48,6 +52,28 @@ export function UserNav({ user: defaultUser }: UserNavProps) {
           avatar: user.imageUrl,
         }
       : defaultUser;
+
+  const handleSelect = (translationKey: string) => {
+    switch (translationKey) {
+      case "upgradeToPro":
+        openPanel("upgrade");
+        break;
+      case "account":
+        openPanel("account");
+        break;
+      case "billing":
+        openPanel("billing");
+        break;
+      case "notifications":
+        // Delay opening to prevent focus-restore collisions with closing DropdownMenu
+        setTimeout(() => {
+          openNotificationCenter(true);
+        }, 150);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -64,11 +90,11 @@ export function UserNav({ user: defaultUser }: UserNavProps) {
                   {displayUser.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm">
+              <div className="grid flex-1 text-left text-sm group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-medium">{displayUser.name}</span>
                 <span className="truncate text-xs">{displayUser.email}</span>
               </div>
-              <ChevronsUpDown className="ml-auto size-4" />
+              <ChevronsUpDown className="ml-auto size-4 shrink-0 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -103,7 +129,10 @@ export function UserNav({ user: defaultUser }: UserNavProps) {
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <DropdownMenuItem key={item.translationKey}>
+                      <DropdownMenuItem
+                        key={item.translationKey}
+                        onSelect={() => handleSelect(item.translationKey)}
+                      >
                         <Icon strokeWidth={2} />
                         {t(item.translationKey as Parameters<typeof t>[0])}
                       </DropdownMenuItem>
