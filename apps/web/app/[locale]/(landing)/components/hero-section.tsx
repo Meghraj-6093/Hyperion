@@ -26,12 +26,13 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
+import { HeroBackdrop } from "./hero-backdrop";
 import { CodeBlock, CtaLink, Eyebrow, GlowCard } from "./marketing-kit";
 import { Counter, easeOut, Marquee } from "./motion-primitives";
 
 /* ── Copy ─────────────────────────────────────────────────── */
 
-/* Words from HEADLINE_HIGHLIGHT_FROM onward get the amber shimmer —
+/* Words from HEADLINE_HIGHLIGHT_FROM onward get the shimmer sweep —
    the payoff phrase, what the swarm does for you. */
 const HEADLINE = ["You", "command.", "Agents", "build."];
 const HEADLINE_HIGHLIGHT_FROM = 2;
@@ -112,21 +113,6 @@ const TERMINAL_CODE = `$ hyperion swarm start --agents 4
 ● agent-04  reviewing  → PR #214 approved
 
 swarm active · 4 agents · you are in command`;
-
-/* Deterministic particle field — fixed values (no Math.random) so the
-   server and client render identical markup. */
-const PARTICLES = [
-  { left: "8%", top: "22%", size: 3, dur: "13s", delay: "0s", x: "12px" },
-  { left: "16%", top: "58%", size: 2, dur: "17s", delay: "-4s", x: "-10px" },
-  { left: "24%", top: "34%", size: 2, dur: "15s", delay: "-9s", x: "8px" },
-  { left: "36%", top: "70%", size: 3, dur: "19s", delay: "-2s", x: "-14px" },
-  { left: "48%", top: "18%", size: 2, dur: "14s", delay: "-6s", x: "10px" },
-  { left: "58%", top: "62%", size: 2, dur: "18s", delay: "-11s", x: "-8px" },
-  { left: "66%", top: "28%", size: 3, dur: "16s", delay: "-3s", x: "14px" },
-  { left: "74%", top: "54%", size: 2, dur: "20s", delay: "-8s", x: "-12px" },
-  { left: "84%", top: "36%", size: 2, dur: "15s", delay: "-5s", x: "10px" },
-  { left: "92%", top: "64%", size: 3, dur: "17s", delay: "-12s", x: "-10px" },
-];
 
 /* ── Micro components ─────────────────────────────────────── */
 
@@ -325,8 +311,7 @@ export default function HeroSection() {
             />
           ))}
         </div>
-
-        <div className="relative pt-28 md:pt-40">
+        <div className="relative z-10 w-full pt-24 pb-16 md:pt-28">
           <div className="mx-auto max-w-7xl px-6">
             <div className="text-center">
               {/* Announcement pill */}
@@ -360,7 +345,7 @@ export default function HeroSection() {
                 </Link>
               </motion.div>
 
-              {/* Headline — per-word blur reveal, amber shimmer on the payoff word */}
+              {/* Headline — per-word blur reveal, shimmer sweep on the payoff phrase */}
               <h1 className="mx-auto mt-8 max-w-4xl text-balance font-display text-5xl tracking-tight max-md:font-semibold md:text-7xl lg:mt-14 xl:text-[5.25rem]">
                 {HEADLINE.map((word, i) => (
                   <Fragment key={word}>
@@ -443,6 +428,35 @@ export default function HeroSection() {
             </div>
           </Reveal>
         </div>
+      </section>
+
+      {/* ── Screenshot — scroll-linked 3D untilt with orbiting border light ── */}
+      <section className="relative">
+        <Reveal direction="up" duration={450} offset={48}>
+          <div
+            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-4 [perspective:1200px] sm:mr-0"
+            ref={shotRef}
+          >
+            <motion.div
+              className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-border bg-card/40 p-4 shadow-2xl shadow-black/40 will-change-transform"
+              style={{ rotateX, scale, transformPerspective: 1200 }}
+            >
+              <Image
+                alt="Hyperion workspace screenshot"
+                className="relative aspect-15/8 rounded-2xl border border-border/50"
+                height="1080"
+                priority={true}
+                src="/app-screen-dark.png"
+                width="1920"
+              />
+              <BorderBeam
+                className="from-transparent via-primary to-transparent"
+                duration={6}
+                size={200}
+              />
+            </motion.div>
+          </div>
+        </Reveal>
       </section>
 
       {/* ── Capability ticker ── */}

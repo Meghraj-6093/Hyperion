@@ -12,17 +12,18 @@ interface BorderTraceProps {
   radius?: number;
 }
 
-/** The "Hyperion Aura" spectrum — amber → magenta → violet → cyan → back
- * to amber. Reserved exclusively for this component: the site's one
- * signature multi-hue flourish. Everywhere else uses the flat --primary
- * amber, so this stays a rare, deliberate moment rather than a theme. */
+/** Monochrome light beam — platinum breathing through graphite and
+ * back, in sync with the site's three-color palette (#080705 /
+ * #3A3A3A / #EEEEED). As the element auto-rotates along the path, the
+ * fixed conic gradient reads as a glow that brightens and dims while
+ * it travels — light itself is the accent, no hue anywhere. */
 const AURA_SPECTRUM =
-  "conic-gradient(from 0deg, #ff7a29, #e94bd1, #8b5cf6, #22d3ee, #ff7a29)";
+  "conic-gradient(from 0deg, #eeeeed, #3a3a3a, #eeeeed, #3a3a3a, #eeeeed)";
 
 /**
- * BorderTrace — a small soft aura that travels the complete rounded
+ * BorderTrace — a small soft light that travels the complete rounded
  * perimeter of its parent in one continuous, seamless loop, gently
- * cycling through the Hyperion Aura spectrum as it goes (the CSS
+ * breathing between platinum and graphite as it goes (the CSS
  * motion-path auto-rotates the traveling element to match the path's
  * tangent, so a fixed conic gradient reads as a shifting hue as it
  * rounds the corners — no extra keyframes needed). Pure CSS motion-path
