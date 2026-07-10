@@ -47,7 +47,7 @@ function TerminalPlaceholder({ shellType }: { shellType: string }) {
   const promptColor = isWin ? "text-blue-500/50" : "text-emerald-500/50";
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex select-none flex-col gap-2.5 bg-[#08080a] p-4 font-mono text-xs">
+    <div className="terminal-shimmer-sweep pointer-events-none absolute inset-0 z-10 flex select-none flex-col gap-2.5 bg-[#08080a] p-4 font-mono text-xs">
       <div className="flex animate-pulse items-center gap-1.5 opacity-60">
         <span className={`${promptColor} font-bold`}>{prompt}</span>
         <div className="h-3.5 w-20 rounded bg-muted-foreground/15" />
