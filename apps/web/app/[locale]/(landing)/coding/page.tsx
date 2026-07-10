@@ -1,15 +1,15 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Cpu, Layout, Network, Terminal } from "lucide-react";
+import { motion } from "motion/react";
+import { CodeBlock, CtaLink, Eyebrow } from "../components/marketing-kit";
 import {
   Counter,
   Marquee,
-  StickyPanels,
   revealVariants,
+  StickyPanels,
   staggerContainer,
 } from "../components/motion-primitives";
-import { CodeBlock, CtaLink, Eyebrow } from "../components/marketing-kit";
 
 const techStack: string[] = [
   "No cables  ·  No plugins  ·  No setups  ·  Zero config  ·  16 panes  ·  Agent dispatch  ·  Dependency resolution  ·  Real-time sync  ·  Canvas overlay  ·  Monaco editor  ·  xterm.js  ·  node-pty  ·  WebSocket streaming  ·  Container-native  ·  Open source  ·  ",
@@ -65,7 +65,7 @@ export default function CodingPage() {
       <section className="relative overflow-hidden pt-36 pb-20 md:pb-28">
         <div
           aria-hidden={true}
-          className="-z-10 pointer-events-none absolute inset-x-0 top-0 h-[560px] [background:radial-gradient(50%_55%_at_30%_0%,color-mix(in_oklab,var(--color-primary)_12%,transparent)_0%,transparent_70%)] landing-glow-breathe"
+          className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] [background:radial-gradient(50%_55%_at_30%_0%,color-mix(in_oklab,var(--color-primary)_12%,transparent)_0%,transparent_70%)]"
         />
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -113,7 +113,11 @@ export default function CodingPage() {
 
       {/* Marquee tech stack ticker */}
       <section className="border-border border-y py-4">
-        <Marquee className="[mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]" pauseOnHover={false} speed={50}>
+        <Marquee
+          className="[mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+          pauseOnHover={false}
+          speed={50}
+        >
           <div className="flex items-center gap-8 px-4">
             {techStack[0]?.split("·").map((item, i) => (
               <span

@@ -88,12 +88,12 @@ export function ParallaxField() {
   return (
     <div
       aria-hidden={true}
-      className="-z-10 pointer-events-none absolute inset-0 overflow-hidden"
+      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       ref={rootRef}
     >
       {/* ── 3D grid floor — recedes to a horizon at the top of the page ── */}
       <div className="absolute inset-x-0 top-0 h-[640px] opacity-45 [mask-image:radial-gradient(ellipse_75%_70%_at_50%_0%,#000_30%,transparent_80%)] [perspective:1000px]">
-        <div className="[transform:rotateX(64deg)] absolute inset-x-[-35%] top-[-2%] h-[150%] origin-top">
+        <div className="absolute inset-x-[-35%] top-[-2%] h-[150%] origin-top [transform:rotateX(64deg)]">
           <div
             className="landing-grid-flow absolute inset-x-0 top-0 h-[200%] will-change-transform"
             style={{
@@ -110,7 +110,7 @@ export function ParallaxField() {
       <motion.div className="absolute inset-0" style={{ y: yFar }}>
         <MouseLayer px={6}>
           {/* Big tilted ellipse ring behind the horizon */}
-          <div className="[transform:rotate3d(1,0,0,74deg)] absolute top-[-90px] right-[-140px] size-[460px] rounded-full border border-border/40" />
+          <div className="absolute top-[-90px] right-[-140px] size-[460px] rounded-full border border-border/40 [transform:rotate3d(1,0,0,74deg)]" />
           {/* Distant soft orb */}
           <div className="absolute top-[120px] left-[-80px] size-64 rounded-full bg-primary/[0.06] blur-3xl" />
           {/* Scattered far dots */}
@@ -127,18 +127,22 @@ export function ParallaxField() {
         <MouseLayer px={14}>
           {/* Tilted wireframe plane, drifting */}
           <div
-            className="landing-float [transform:rotate3d(0.8,1,0,48deg)] absolute top-[330px] left-[5%] size-40 rounded-2xl border border-border/70"
+            className="landing-float absolute top-[330px] left-[5%] size-40 rounded-2xl border border-border/70 [transform:rotate3d(0.8,1,0,48deg)]"
             style={{ "--float-dur": "9s" } as CSSProperties}
           />
           {/* Accent 3D ring */}
           <div
-            className="landing-float [transform:rotate3d(1,0.4,0,66deg)] absolute top-[170px] right-[7%] size-56 rounded-full border border-primary/20 shadow-[0_0_60px_-20px] shadow-primary/30"
-            style={{ "--float-dur": "11s", "--float-delay": "-4s" } as CSSProperties}
+            className="landing-float absolute top-[170px] right-[7%] size-56 rounded-full border border-primary/20 shadow-[0_0_60px_-20px] shadow-primary/30 [transform:rotate3d(1,0.4,0,66deg)]"
+            style={
+              { "--float-dur": "11s", "--float-delay": "-4s" } as CSSProperties
+            }
           />
           {/* Lower plane near the FAQ zone */}
           <div
-            className="landing-float [transform:rotate3d(1,0.9,0.2,55deg)] absolute bottom-[480px] left-[3%] size-28 rounded-xl border border-border/60"
-            style={{ "--float-dur": "10s", "--float-delay": "-6s" } as CSSProperties}
+            className="landing-float absolute bottom-[480px] left-[3%] size-28 rounded-xl border border-border/60 [transform:rotate3d(1,0.9,0.2,55deg)]"
+            style={
+              { "--float-dur": "10s", "--float-delay": "-6s" } as CSSProperties
+            }
           />
         </MouseLayer>
       </motion.div>
@@ -150,13 +154,15 @@ export function ParallaxField() {
           <div className="absolute top-[500px] left-[10%] size-40 rounded-full bg-primary/10 blur-2xl" />
           {/* Bright 3D ring */}
           <div
-            className="landing-float [transform:rotate3d(1,0.2,0.1,62deg)] absolute top-[600px] right-[12%] size-32 rounded-full border border-primary/30 shadow-[0_0_40px_-12px] shadow-primary/40"
+            className="landing-float absolute top-[600px] right-[12%] size-32 rounded-full border border-primary/30 shadow-[0_0_40px_-12px] shadow-primary/40 [transform:rotate3d(1,0.2,0.1,62deg)]"
             style={{ "--float-dur": "7s" } as CSSProperties}
           />
           {/* Floating diamond plane near the bottom */}
           <div
-            className="landing-float [transform:rotate3d(0.4,1,0.3,58deg)_rotate(45deg)] absolute right-[28%] bottom-[300px] size-16 rounded-lg border border-border/80"
-            style={{ "--float-dur": "8s", "--float-delay": "-3s" } as CSSProperties}
+            className="landing-float absolute right-[28%] bottom-[300px] size-16 rounded-lg border border-border/80 [transform:rotate3d(0.4,1,0.3,58deg)_rotate(45deg)]"
+            style={
+              { "--float-dur": "8s", "--float-delay": "-3s" } as CSSProperties
+            }
           />
           {/* Near accent dots */}
           <span className="absolute top-[420px] left-[46%] size-1.5 rounded-full bg-primary/50 shadow-[0_0_8px_2px] shadow-primary/30" />

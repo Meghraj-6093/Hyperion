@@ -1,12 +1,12 @@
 "use client";
 
+import { BorderBeam } from "@workspace/ui/components/landing/border-beam";
+import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
 import { Minus, Plus } from "lucide-react";
 import { motion, useInView, useScroll } from "motion/react";
-import { useEffect, useRef, useState } from "react";
 import type * as React from "react";
-import { BorderBeam } from "@workspace/ui/components/landing/border-beam";
-import { Reveal } from "@workspace/ui/components/marketing/reveal";
+import { useEffect, useRef, useState } from "react";
 
 /* ─────────────────────────────────────────────────────────────
    Local dark marketing kit for the (landing) route group.
@@ -166,7 +166,7 @@ export function CtaLink({
       }}
       onMouseMove={(e) => {
         const rect = ref.current?.getBoundingClientRect();
-        if (!rect || !ref.current) {
+        if (!(rect && ref.current)) {
           return;
         }
         const x = (e.clientX - (rect.left + rect.width / 2)) * 0.12;
@@ -263,7 +263,12 @@ export function FAQ({
       {items.map((item, index) => {
         const isOpen = openIndex === index;
         return (
-          <Reveal direction="up" duration={200} index={index} key={item.question}>
+          <Reveal
+            direction="up"
+            duration={200}
+            index={index}
+            key={item.question}
+          >
             <div
               className={cn(
                 "overflow-hidden rounded-xl border bg-card/40 transition-colors duration-200",
@@ -326,7 +331,9 @@ export function CodeBlock({
   const [chars, setChars] = useState(typing ? 0 : Number.MAX_SAFE_INTEGER);
 
   useEffect(() => {
-    if (!(typing && isInView && code)) return;
+    if (!(typing && isInView && code)) {
+      return;
+    }
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setChars(code.length);
       return;

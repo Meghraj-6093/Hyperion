@@ -3,13 +3,13 @@
 import { motion, useReducedMotion } from "motion/react";
 
 interface BorderTraceProps {
-  /** Must match the parent's border-radius in px so the traced path aligns exactly. */
-  radius?: number;
   /** Diameter of the traveling glow in px — keep small relative to the container. */
   beamSize?: number;
+  className?: string;
   /** Seconds for one full loop around the perimeter. */
   duration?: number;
-  className?: string;
+  /** Must match the parent's border-radius in px so the traced path aligns exactly. */
+  radius?: number;
 }
 
 /** Monochrome light beam — platinum breathing through graphite and
@@ -60,9 +60,14 @@ export function BorderTrace({
           offsetPath: `rect(0 auto auto 0 round ${radius}px)`,
           background: AURA_SPECTRUM,
           maskImage: "radial-gradient(circle, black 25%, transparent 68%)",
-          WebkitMaskImage: "radial-gradient(circle, black 25%, transparent 68%)",
+          WebkitMaskImage:
+            "radial-gradient(circle, black 25%, transparent 68%)",
         }}
-        transition={{ duration, ease: "linear", repeat: Number.POSITIVE_INFINITY }}
+        transition={{
+          duration,
+          ease: "linear",
+          repeat: Number.POSITIVE_INFINITY,
+        }}
       />
     </div>
   );

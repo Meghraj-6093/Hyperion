@@ -99,7 +99,7 @@ export default function DownloadContent({ release }: DownloadContentProps) {
             }}
           >
             <CtaLink className="text-base" href={primaryUrl}>
-              <span className="motion-safe:[&_svg]:animate-bounce [&_svg]:size-5">
+              <span className="[&_svg]:size-5 motion-safe:[&_svg]:animate-bounce">
                 {icon}
               </span>
               <span className="text-nowrap">{label}</span>
@@ -130,7 +130,10 @@ export default function DownloadContent({ release }: DownloadContentProps) {
           }}
         >
           <div id="platforms">
-            <PlatformCards assets={release?.assets || {}} detectedPlatform={platform} />
+            <PlatformCards
+              assets={release?.assets || {}}
+              detectedPlatform={platform}
+            />
           </div>
         </AnimatedGroup>
       </section>
