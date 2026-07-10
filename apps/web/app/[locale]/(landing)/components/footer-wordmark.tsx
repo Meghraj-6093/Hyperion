@@ -28,7 +28,9 @@ export function FooterWordmark({ text = "HYPERION" }: { text?: string }) {
       onMouseLeave={() => setRevealed(false)}
       onMouseMove={(e) => {
         const rect = svgRef.current?.getBoundingClientRect();
-        if (!rect) return;
+        if (!rect) {
+          return;
+        }
         setPos({
           cx: `${((e.clientX - rect.left) / rect.width) * 100}%`,
           cy: `${((e.clientY - rect.top) / rect.height) * 100}%`,

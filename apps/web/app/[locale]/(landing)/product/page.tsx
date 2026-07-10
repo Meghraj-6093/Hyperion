@@ -1,8 +1,18 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
-import { Bot, Box, Columns3, GitBranch, Keyboard, Layout, Palette, Sparkles } from "lucide-react";
 import { BorderBeam } from "@workspace/ui/components/landing/border-beam";
+import {
+  Bot,
+  Box,
+  Columns3,
+  GitBranch,
+  Keyboard,
+  Layout,
+  Palette,
+  Sparkles,
+} from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import { CtaLink, Eyebrow, GlowCard } from "../components/marketing-kit";
 import {
   Counter,
   Marquee,
@@ -10,7 +20,6 @@ import {
   revealVariants,
   staggerContainer,
 } from "../components/motion-primitives";
-import { CtaLink, Eyebrow, GlowCard } from "../components/marketing-kit";
 
 const previewTiles = [
   { icon: Layout, label: "Workspace", active: true },
@@ -41,7 +50,11 @@ function WorkspacePreview() {
                 }`}
                 initial={{ opacity: 0, y: 12 }}
                 key={tile.label}
-                transition={{ duration: 0.4, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                transition={{
+                  duration: 0.4,
+                  delay: i * 0.08,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 viewport={{ once: true, margin: "-40px" }}
                 whileInView={{ opacity: 1, y: 0 }}
               >
@@ -74,8 +87,12 @@ function WorkspacePreview() {
 
       <motion.div
         animate={reduceMotion ? undefined : { y: [0, -6, 0] }}
-        className="-top-4 -right-4 absolute hidden items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-black/30 shadow-lg md:flex"
-        transition={{ duration: 5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="absolute -top-4 -right-4 hidden items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-black/30 shadow-lg md:flex"
+        transition={{
+          duration: 5,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
       >
         <Bot className="size-3.5 text-primary" />
         <span className="text-foreground/80 text-xs">Agent active</span>
@@ -128,11 +145,36 @@ const features = [
 ];
 
 const timeline = [
-  { year: "Q1 2025", title: "Multi-pane terminal", desc: "16-pane xterm.js terminal grid with drag-and-drop layout engine.", icon: Layout },
-  { year: "Q2 2025", title: "Kanban task board", desc: "@dnd-kit powered board with drag-to-dispatch agent integration.", icon: Columns3 },
-  { year: "Q3 2025", title: "AI agent swarm", desc: "Autonomous agent dispatch, dependency resolution, and pipeline chaining.", icon: Bot },
-  { year: "Q4 2025", title: "Canvas overlay", desc: "Real-time agent execution traces and system topology visualization.", icon: Box },
-  { year: "2026+", title: "Community & ecosystem", desc: "Plugin system, custom agent runtimes, and collaborative workspaces.", icon: Sparkles },
+  {
+    year: "Q1 2025",
+    title: "Multi-pane terminal",
+    desc: "16-pane xterm.js terminal grid with drag-and-drop layout engine.",
+    icon: Layout,
+  },
+  {
+    year: "Q2 2025",
+    title: "Kanban task board",
+    desc: "@dnd-kit powered board with drag-to-dispatch agent integration.",
+    icon: Columns3,
+  },
+  {
+    year: "Q3 2025",
+    title: "AI agent swarm",
+    desc: "Autonomous agent dispatch, dependency resolution, and pipeline chaining.",
+    icon: Bot,
+  },
+  {
+    year: "Q4 2025",
+    title: "Canvas overlay",
+    desc: "Real-time agent execution traces and system topology visualization.",
+    icon: Box,
+  },
+  {
+    year: "2026+",
+    title: "Community & ecosystem",
+    desc: "Plugin system, custom agent runtimes, and collaborative workspaces.",
+    icon: Sparkles,
+  },
 ];
 
 export default function ProductPage() {
@@ -142,7 +184,7 @@ export default function ProductPage() {
       <section className="relative overflow-hidden pt-36 pb-24 md:pb-32">
         <div
           aria-hidden={true}
-          className="-z-10 pointer-events-none absolute inset-x-0 top-0 h-[560px] [background:radial-gradient(55%_55%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_12%,transparent)_0%,transparent_70%)] landing-glow-breathe"
+          className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] [background:radial-gradient(55%_55%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_12%,transparent)_0%,transparent_70%)]"
         />
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -168,7 +210,10 @@ export default function ProductPage() {
                 keyboard-first environment. Built for the age of autonomous
                 software development.
               </motion.p>
-              <motion.div className="mt-8 flex flex-wrap gap-3" variants={revealVariants}>
+              <motion.div
+                className="mt-8 flex flex-wrap gap-3"
+                variants={revealVariants}
+              >
                 <CtaLink href="/contact">Get early access</CtaLink>
                 <CtaLink href="/coding" variant="ghost">
                   Explore terminal
@@ -183,7 +228,11 @@ export default function ProductPage() {
 
       {/* Marquee ticker */}
       <section className="border-border border-y py-4">
-        <Marquee className="[mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]" pauseOnHover={false} speed={45}>
+        <Marquee
+          className="[mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+          pauseOnHover={false}
+          speed={45}
+        >
           <div className="flex items-center gap-8 px-4">
             {taglines[0]?.split("·").map((item, i) => (
               <span
@@ -233,7 +282,7 @@ export default function ProductPage() {
               <motion.div key={feature.title} variants={revealVariants}>
                 <GlowCard className="h-full p-8">
                   <div className="flex size-11 items-center justify-center rounded-xl border border-border bg-secondary transition-colors duration-300 group-hover/card:border-primary/40">
-                    <Icon className="size-5 text-primary transition-transform duration-300 ease-out group-hover/card:scale-110 group-hover/card:-rotate-3" />
+                    <Icon className="size-5 text-primary transition-transform duration-300 ease-out group-hover/card:-rotate-3 group-hover/card:scale-110" />
                   </div>
                   <h3 className="mt-5 font-medium text-foreground text-lg">
                     {feature.title}
@@ -272,7 +321,11 @@ export default function ProductPage() {
                   className="relative flex gap-5"
                   initial={{ opacity: 0, y: 20 }}
                   key={item.year}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: i * 0.05 }}
+                  transition={{
+                    duration: 0.4,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: i * 0.05,
+                  }}
                   viewport={{ once: true, margin: "-60px" }}
                   whileInView={{ opacity: 1, y: 0 }}
                 >

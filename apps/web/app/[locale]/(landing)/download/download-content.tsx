@@ -41,7 +41,7 @@ export default function DownloadContent({ release }: DownloadContentProps) {
     <main className="overflow-hidden">
       <div
         aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[560px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)] landing-glow-breathe"
+        className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 z-0 h-[560px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)]"
       />
       <section className="pt-24 md:pt-36">
         <div className="mx-auto max-w-6xl px-6 text-center">
@@ -100,7 +100,7 @@ export default function DownloadContent({ release }: DownloadContentProps) {
             }}
           >
             <CtaLink className="text-base" href={primaryUrl}>
-              <span className="motion-safe:[&_svg]:animate-bounce [&_svg]:size-5">
+              <span className="[&_svg]:size-5 motion-safe:[&_svg]:animate-bounce">
                 {icon}
               </span>
               <span className="text-nowrap">{label}</span>
@@ -131,7 +131,10 @@ export default function DownloadContent({ release }: DownloadContentProps) {
           }}
         >
           <div id="platforms">
-            <PlatformCards assets={release?.assets || {}} detectedPlatform={platform} />
+            <PlatformCards
+              assets={release?.assets || {}}
+              detectedPlatform={platform}
+            />
           </div>
         </AnimatedGroup>
       </section>

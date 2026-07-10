@@ -61,7 +61,7 @@ export default function NewsPage() {
     <section className="relative mx-auto max-w-4xl px-6 pt-36 pb-24 md:pb-32">
       <div
         aria-hidden={true}
-        className="-z-10 pointer-events-none absolute inset-x-0 top-0 h-[420px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)] landing-glow-breathe"
+        className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)]"
       />
       <Eyebrow>Dev log</Eyebrow>
       <h1 className="mt-3 font-display text-4xl text-foreground tracking-tighter md:text-6xl">

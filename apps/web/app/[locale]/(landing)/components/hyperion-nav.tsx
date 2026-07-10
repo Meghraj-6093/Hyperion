@@ -67,11 +67,15 @@ export function HyperionNav() {
           className="relative mx-auto flex items-center justify-between px-6 transition-[height] duration-500 ease-out"
           style={{ height: scrolled ? 56 : 64 }}
         >
-          <Link aria-label="Home" className="group/logo relative shrink-0" href="/">
+          <Link
+            aria-label="Home"
+            className="group/logo relative shrink-0"
+            href="/"
+          >
             <span
               className={cn(
                 wordmarkFont.className,
-                "bg-[length:200%_100%] bg-clip-text bg-gradient-to-r from-primary via-muted-foreground to-primary text-transparent text-sm tracking-[0.3em] transition-[background-position,letter-spacing] duration-700 ease-out group-hover/logo:bg-[position:100%_0%] group-hover/logo:tracking-[0.36em]"
+                "bg-[length:200%_100%] bg-gradient-to-r from-primary via-muted-foreground to-primary bg-clip-text text-sm text-transparent tracking-[0.3em] transition-[background-position,letter-spacing] duration-700 ease-out group-hover/logo:bg-[position:100%_0%] group-hover/logo:tracking-[0.36em]"
               )}
             >
               HYPERION
@@ -111,7 +115,7 @@ export function HyperionNav() {
 
           <div className="hidden items-center gap-4 lg:flex">
             <Link
-              className="inline-flex h-8 items-center justify-center rounded-full bg-primary px-4 font-medium text-primary-foreground text-sm transition-all duration-150 hover:bg-primary/85 hover:scale-[1.03] active:scale-[0.98]"
+              className="inline-flex h-8 items-center justify-center rounded-full bg-primary px-4 font-medium text-primary-foreground text-sm transition-all duration-150 hover:scale-[1.03] hover:bg-primary/85 active:scale-[0.98]"
               href="/contact"
             >
               Get access

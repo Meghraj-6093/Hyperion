@@ -1,11 +1,14 @@
 "use client";
 
 import { cn } from "@workspace/ui/lib/utils";
-import { motion } from "motion/react";
 import { Bot, Check, Eye, Sparkles, Users } from "lucide-react";
+import { motion } from "motion/react";
 import Link from "next/link";
-import { revealVariants, staggerContainer } from "../components/motion-primitives";
 import { Badge, Eyebrow, FAQ, GlowCard } from "../components/marketing-kit";
+import {
+  revealVariants,
+  staggerContainer,
+} from "../components/motion-primitives";
 import { ParallaxField } from "../components/parallax-field";
 
 const roles = [
@@ -147,7 +150,7 @@ export default function ServicesPage() {
                   )}
                 >
                   {role.featured && (
-                    <Badge className="-top-0 absolute right-6" variant="solid">
+                    <Badge className="absolute -top-0 right-6" variant="solid">
                       Flagship role
                     </Badge>
                   )}

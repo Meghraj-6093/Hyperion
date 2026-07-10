@@ -53,9 +53,9 @@ export interface DownloadOption {
 export interface PlatformCardData {
   downloads: DownloadOption[];
   icon: React.ReactNode;
-  name: string;
   /** Matches against detectPlatform() to highlight the visitor's own platform. */
   matchKey?: Platform;
+  name: string;
 }
 
 // Platform cards data

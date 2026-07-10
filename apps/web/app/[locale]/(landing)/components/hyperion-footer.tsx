@@ -67,7 +67,10 @@ export function HyperionFooter() {
         <div className={`${wordmarkFont.variable} p-8 md:p-12`}>
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-1">
-              <Link className="font-display text-foreground text-lg tracking-tight" href="/">
+              <Link
+                className="font-display text-foreground text-lg tracking-tight"
+                href="/"
+              >
                 Hyperion
               </Link>
               <p className="mt-3 max-w-xs text-muted-foreground text-sm">

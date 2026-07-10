@@ -3,8 +3,8 @@
 import { cn } from "@workspace/ui/lib/utils";
 
 interface GradientBandProps {
-  variant?: "full" | "thin";
   className?: string;
+  variant?: "full" | "thin";
 }
 
 /**
@@ -12,7 +12,10 @@ interface GradientBandProps {
  * transition from page content into the footer. Kept to one accent
  * color to stay consistent with the dark, minimal marketing palette.
  */
-export function GradientBand({ variant = "full", className }: GradientBandProps) {
+export function GradientBand({
+  variant = "full",
+  className,
+}: GradientBandProps) {
   return (
     <div
       aria-hidden={true}
