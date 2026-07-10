@@ -123,7 +123,7 @@ export function WorkspaceNav({ navigate, onNewWorkspace }: WorkspaceNavProps) {
                   <div className="flex h-9.5 w-full items-center gap-2 px-3">
                     <input
                       autoFocus
-                      className="flex-1 rounded border border-primary/50 bg-[#111111] px-2 py-1 font-sans text-foreground text-xs outline-none focus:ring-1 focus:ring-primary/20"
+                      className="flex-1 rounded border border-primary/50 bg-background px-2 py-1 font-sans text-foreground text-xs outline-none focus:ring-1 focus:ring-primary/20"
                       onBlur={() => handleRenameSave(ws.id)}
                       onChange={(e) => setRenameValue(e.target.value)}
                       onKeyDown={(e) => {
@@ -180,7 +180,7 @@ export function WorkspaceNav({ navigate, onNewWorkspace }: WorkspaceNavProps) {
                     </SidebarMenuButton>
 
                     {/* Actions (shows on hover) */}
-                    <div className="absolute top-1/2 right-2 z-30 flex -translate-y-1/2 items-center gap-0.5 bg-gradient-to-l from-[#111111] via-[#111111]/85 to-transparent py-1 pl-4 opacity-0 transition-opacity group-hover/item:opacity-100 group-data-[collapsible=icon]:hidden">
+                    <div className="absolute top-1/2 right-2 z-30 flex -translate-y-1/2 items-center gap-0.5 bg-gradient-to-l from-sidebar via-sidebar/85 to-transparent py-1 pl-4 opacity-0 transition-opacity group-hover/item:opacity-100 group-data-[collapsible=icon]:hidden">
                       <button
                         className="flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         onClick={(e) => {

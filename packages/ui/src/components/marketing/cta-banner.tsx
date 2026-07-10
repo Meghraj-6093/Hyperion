@@ -1,17 +1,16 @@
 "use client";
 
+import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
-import Link from "next/link";
 import type * as React from "react";
-import { Reveal } from "./reveal";
 
 interface CTABannerProps extends React.ComponentProps<"section"> {
-  headline?: string;
-  description?: string;
-  ctaLabel?: string;
   ctaHref?: string;
+  ctaLabel?: string;
   /** Use dark buttons instead of primary-orange */
   dark?: boolean;
+  description?: string;
+  headline?: string;
 }
 
 export function CTABanner({
@@ -38,32 +37,32 @@ export function CTABanner({
             {headline}
           </h2>
           {description && (
-            <p className="mt-6 text-subtitle text-mistral-slate">
+            <p className="mt-6 text-mistral-slate text-subtitle">
               {description}
             </p>
           )}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             {dark ? (
-              <Link
+              <a
                 className="inline-flex h-10 items-center justify-center rounded-md bg-mistral-ink px-5 text-button-md text-mistral-on-dark transition-colors duration-150 hover:bg-mistral-charcoal"
                 href={ctaHref}
               >
                 {ctaLabel}
-              </Link>
+              </a>
             ) : (
-              <Link
+              <a
                 className="inline-flex h-10 items-center justify-center rounded-md bg-mistral-primary px-5 text-button-md text-mistral-on-primary transition-colors duration-150 hover:bg-mistral-primary-deep"
                 href={ctaHref}
               >
                 {ctaLabel}
-              </Link>
+              </a>
             )}
-            <Link
+            <a
               className="inline-flex h-10 items-center justify-center rounded-md border border-mistral-hairline-strong bg-transparent px-5 text-button-md text-mistral-ink transition-colors duration-150 hover:bg-mistral-surface"
               href="/contact"
             >
               Contact sales
-            </Link>
+            </a>
           </div>
         </div>
       </section>

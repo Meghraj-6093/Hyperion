@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useInView } from "motion/react";
-import { useRef, type ReactNode } from "react";
+import { Children, isValidElement, type ReactNode, useRef } from "react";
 
 /* ── ui-craft motion budget ──
    Color/opacity changes:  100-150ms
@@ -14,19 +14,19 @@ import { useRef, type ReactNode } from "react";
 
 interface RevealProps {
   children: ReactNode;
+  className?: string;
+  /** Delay in ms before animation starts */
+  delay?: number;
   /** Entrance direction: up, down, left, right, scale, or none (fade only) */
   direction?: "up" | "down" | "left" | "right" | "scale" | "none";
   /** Duration in ms — default 300 (medium UI) */
   duration?: number;
-  /** Delay in ms before animation starts */
-  delay?: number;
+  /** Stagger index — applies progressive delay when multiple Reveals are sequential */
+  index?: number;
   /** Offset in px for slide directions */
   offset?: number;
   /** Once triggered, do not re-trigger on scroll back */
   once?: boolean;
-  className?: string;
-  /** Stagger index — applies progressive delay when multiple Reveals are sequential */
-  index?: number;
 }
 
 /**
@@ -53,12 +53,20 @@ export function Reveal({
 
   const getInitialTransform = () => {
     switch (direction) {
-      case "up":    return { opacity: 0, y: offset };
-      case "down":  return { opacity: 0, y: -offset };
-      case "left":  return { opacity: 0, x: offset };
-      case "right": return { opacity: 0, x: -offset };
-      case "scale": return { opacity: 0, scale: 0.95 };
-      case "none":  return { opacity: 0 };
+      case "up":
+        return { opacity: 0, y: offset };
+      case "down":
+        return { opacity: 0, y: -offset };
+      case "left":
+        return { opacity: 0, x: offset };
+      case "right":
+        return { opacity: 0, x: -offset };
+      case "scale":
+        return { opacity: 0, scale: 0.95 };
+      case "none":
+        return { opacity: 0 };
+      default:
+        return { opacity: 0 };
     }
   };
 
@@ -67,14 +75,12 @@ export function Reveal({
 
   return (
     <motion.div
-      ref={ref}
+      animate={
+        isInView ? { opacity: 1, x: 0, y: 0, scale: 1 } : getInitialTransform()
+      }
       className={className}
       initial={getInitialTransform()}
-      animate={
-        isInView
-          ? { opacity: 1, x: 0, y: 0, scale: 1 }
-          : getInitialTransform()
-      }
+      ref={ref}
       transition={{
         duration: durationSec,
         delay: delaySec,
@@ -88,13 +94,13 @@ export function Reveal({
 
 interface StaggerRevealProps {
   children: ReactNode[];
+  className?: string;
   /** Base direction for each child entrance */
   direction?: "up" | "down" | "scale" | "none";
   /** Duration per child in ms */
   duration?: number;
   /** Stagger delay between each child in ms */
   stagger?: number;
-  className?: string;
 }
 
 /**
@@ -113,24 +119,34 @@ export function StaggerReveal({
 
   const getInitialTransform = () => {
     switch (direction) {
-      case "up":    return { opacity: 0, y: 20 };
-      case "down":  return { opacity: 0, y: -20 };
-      case "scale": return { opacity: 0, scale: 0.95 };
-      case "none":  return { opacity: 0 };
+      case "up":
+        return { opacity: 0, y: 20 };
+      case "down":
+        return { opacity: 0, y: -20 };
+      case "scale":
+        return { opacity: 0, scale: 0.95 };
+      case "none":
+        return { opacity: 0 };
+      default:
+        return { opacity: 0 };
     }
   };
 
   return (
-    <div ref={ref} className={className}>
-      {children.map((child, i) => (
+    <div className={className} ref={ref}>
+      {Children.toArray(children).map((child, i) => (
         <motion.div
-          key={i}
           animate={
             isInView
               ? { opacity: 1, x: 0, y: 0, scale: 1 }
               : getInitialTransform()
           }
           initial={getInitialTransform()}
+          key={
+            isValidElement(child) && child.key
+              ? child.key
+              : `stagger-child-${i}`
+          }
           transition={{
             duration: duration / 1000,
             delay: i * (stagger / 1000),

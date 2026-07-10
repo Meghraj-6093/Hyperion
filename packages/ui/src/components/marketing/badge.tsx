@@ -4,12 +4,9 @@ import { cn } from "@workspace/ui/lib/utils";
 import type * as React from "react";
 
 const badgeVariants = {
-  orange:
-    "bg-mistral-primary text-mistral-on-primary",
-  cream:
-    "bg-mistral-cream-deeper text-mistral-ink",
-  dark:
-    "bg-mistral-ink text-mistral-on-dark",
+  orange: "bg-mistral-primary text-mistral-on-primary",
+  cream: "bg-mistral-cream-deeper text-mistral-ink",
+  dark: "bg-mistral-ink text-mistral-on-dark",
 } as const;
 
 type BadgeVariant = keyof typeof badgeVariants;

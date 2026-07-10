@@ -1,14 +1,14 @@
 "use client";
 
+import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
 import { Minus, Plus } from "lucide-react";
-import { useState } from "react";
 import type * as React from "react";
-import { Reveal } from "./reveal";
+import { useState } from "react";
 
 interface FAQItem {
-  question: string;
   answer: string;
+  question: string;
 }
 
 interface FAQProps extends React.ComponentProps<"div"> {
@@ -23,8 +23,13 @@ export function FAQ({ className, items, ...props }: FAQProps) {
       {items.map((item, index) => {
         const isOpen = openIndex === index;
         return (
-          <Reveal direction="up" duration={200} index={index} key={index}>
-            <div className="overflow-hidden rounded-md border-b border-mistral-hairline bg-mistral-canvas">
+          <Reveal
+            direction="up"
+            duration={200}
+            index={index}
+            key={item.question}
+          >
+            <div className="overflow-hidden rounded-md border-mistral-hairline border-b bg-mistral-canvas">
               <button
                 className="flex w-full items-center justify-between px-6 py-5 text-left text-body-md-medium text-mistral-ink transition-colors duration-150 hover:bg-mistral-surface"
                 onClick={() => setOpenIndex(isOpen ? null : index)}

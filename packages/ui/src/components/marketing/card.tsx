@@ -1,22 +1,17 @@
 "use client";
 
+import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
 import type * as React from "react";
-import { Reveal } from "./reveal";
 
 const cardVariants = {
-  base:
-    "bg-mistral-canvas border border-mistral-hairline-soft",
-  feature:
-    "bg-mistral-canvas border border-mistral-hairline-soft",
-  cream:
-    "bg-mistral-cream border border-mistral-beige-deep",
-  "cream-soft":
-    "bg-mistral-surface-cream-soft",
+  base: "bg-mistral-canvas border border-mistral-hairline-soft",
+  feature: "bg-mistral-canvas border border-mistral-hairline-soft",
+  cream: "bg-mistral-cream border border-mistral-beige-deep",
+  "cream-soft": "bg-mistral-surface-cream-soft",
   "feature-product":
     "bg-mistral-canvas border border-mistral-hairline-soft shadow-mistral-level-2",
-  photographic:
-    "bg-mistral-surface-code text-mistral-on-dark",
+  photographic: "bg-mistral-surface-code text-mistral-on-dark",
 } as const;
 
 type CardVariant = keyof typeof cardVariants;
@@ -54,4 +49,4 @@ function MarketingCard({
   );
 }
 
-export { MarketingCard, type CardVariant };
+export { type CardVariant, MarketingCard };

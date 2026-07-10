@@ -3,6 +3,7 @@
 import { useMounted } from "@workspace/core/hooks/use-mounted";
 import "@xterm/xterm/css/xterm.css";
 import { RotateCcw, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface TerminalPaneProps {
@@ -15,6 +16,50 @@ type TerminalInstance = any;
 // biome-ignore lint/suspicious/noExplicitAny: xterm addon types are dynamically imported
 type FitAddonInstance = any;
 
+// Module-level cache for xterm dynamic imports to optimize workspace switching
+let xtermPromise: Promise<{
+  Terminal: any;
+  FitAddon: any;
+  WebLinksAddon: any;
+}> | null = null;
+
+function loadXterm() {
+  if (!xtermPromise) {
+    xtermPromise = Promise.all([
+      import("@xterm/xterm"),
+      import("@xterm/addon-fit"),
+      import("@xterm/addon-web-links"),
+    ]).then(([xterm, fit, webLinks]) => ({
+      Terminal: xterm.Terminal,
+      FitAddon: fit.FitAddon,
+      WebLinksAddon: webLinks.WebLinksAddon,
+    }));
+  }
+  return xtermPromise;
+}
+
+function TerminalPlaceholder({ shellType }: { shellType: string }) {
+  const isWin = shellType.includes("Command") || shellType.includes("Prompt");
+  const prompt = isWin ? "C:\\Users\\hyperion> " : "hyperion@dev:~$ ";
+  const promptColor = isWin ? "text-blue-500/50" : "text-emerald-500/50";
+
+  return (
+    <div className="absolute inset-0 flex flex-col gap-2.5 p-4 font-mono text-xs select-none pointer-events-none bg-[#08080a] z-10">
+      <div className="flex items-center gap-1.5 opacity-60 animate-pulse">
+        <span className={`${promptColor} font-bold`}>{prompt}</span>
+        <div className="h-3.5 w-20 rounded bg-muted-foreground/15" />
+      </div>
+      <div className="h-3.5 w-[85%] rounded bg-muted-foreground/10 animate-pulse [animation-delay:150ms]" />
+      <div className="h-3.5 w-[65%] rounded bg-muted-foreground/10 animate-pulse [animation-delay:300ms]" />
+      <div className="h-3.5 w-[75%] rounded bg-muted-foreground/10 animate-pulse [animation-delay:450ms]" />
+      <div className="flex items-center gap-1.5 opacity-60 mt-1 animate-pulse [animation-delay:600ms]">
+        <span className={`${promptColor} font-bold`}>{prompt}</span>
+        <span className="w-1.5 h-3.5 bg-muted-foreground/45 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 export function TerminalPane({ id, title }: TerminalPaneProps) {
   const mounted = useMounted();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -22,6 +67,7 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
   const fitAddonRef = useRef<FitAddonInstance>(null);
   const [shellType, setShellType] = useState("Local Shell");
   const [isTauriEnv, setIsTauriEnv] = useState(false);
+  const [isTerminalReady, setIsTerminalReady] = useState(false);
 
   // Buffer input for mock shell
   const inputBufferRef = useRef("");
@@ -154,9 +200,7 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
     let unlistenStdout: (() => void) | undefined;
 
     async function init() {
-      const { Terminal } = await import("@xterm/xterm");
-      const { FitAddon } = await import("@xterm/addon-fit");
-      const { WebLinksAddon } = await import("@xterm/addon-web-links");
+      const { Terminal, FitAddon, WebLinksAddon } = await loadXterm();
 
       if (disposed || !containerRef.current) {
         return;
@@ -254,8 +298,14 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
         } else {
           setupMockShell(term);
         }
+        if (!disposed) {
+          setIsTerminalReady(true);
+        }
       } catch {
         setupMockShell(term);
+        if (!disposed) {
+          setIsTerminalReady(true);
+        }
       }
     }
 
@@ -340,21 +390,24 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
 
   if (!mounted) {
     return (
-      <div className="flex flex-col overflow-hidden rounded-lg border border-border/20 bg-zinc-950/80 shadow-md backdrop-blur-sm">
-        <div className="flex h-6.5 items-center border-border/20 border-b bg-zinc-900/60 px-3">
-          <span className="font-mono font-semibold text-[10px] text-muted-foreground">
-            {title}
-          </span>
+      <div className="flex flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md h-full">
+        {/* Title Bar / Header Skeleton */}
+        <div className="flex h-6.5 shrink-0 items-center justify-between border-border/20 border-b bg-[#0f0f12] px-3">
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-semibold text-[10px] text-muted-foreground/50 tracking-tight">
+              {title}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-1 items-center justify-center font-medium text-xs text-zinc-500">
-          Loading...
+        <div className="relative flex-1 overflow-hidden min-h-0 bg-[#08080a]">
+          <TerminalPlaceholder shellType="Local Shell" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md transition-all duration-300 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 hover:shadow-lg">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md transition-all duration-300 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 hover:shadow-lg h-full">
       {/* Title Bar / Header */}
       <div className="flex h-6.5 shrink-0 items-center justify-between border-border/20 border-b bg-[#0f0f12] px-3">
         <div className="flex items-center gap-2">
@@ -388,16 +441,37 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
         </div>
       </div>
 
-      {/* xterm.js Container */}
-      {/* biome-ignore lint/a11y/useSemanticElements: xterm.js container is non-semantic */}
-      <div
-        aria-label={`${title} terminal`}
-        className="relative flex-1 overflow-hidden bg-[#08080a] p-1"
-        ref={containerRef}
-        role="textbox"
-        style={{ minHeight: 0 }}
-        tabIndex={0}
-      />
+      {/* xterm.js Container / Animated Transition */}
+      <div className="relative flex-1 overflow-hidden bg-[#08080a]" style={{ minHeight: 0 }}>
+        <AnimatePresence initial={false}>
+          {!isTerminalReady && (
+            <motion.div
+              key="placeholder"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18, ease: "easeInOut" }}
+              className="absolute inset-0 z-10"
+            >
+              <TerminalPlaceholder shellType={shellType} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.div
+          animate={{ opacity: isTerminalReady ? 1 : 0, y: isTerminalReady ? 0 : 4 }}
+          className="w-full h-full"
+          initial={{ opacity: 0, y: 4 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {/* biome-ignore lint/a11y/useSemanticElements: xterm.js container is non-semantic */}
+          <div
+            aria-label={`${title} terminal`}
+            className="w-full h-full p-1 focus:outline-none"
+            ref={containerRef}
+            role="textbox"
+            tabIndex={0}
+          />
+        </motion.div>
+      </div>
     </div>
   );
 }

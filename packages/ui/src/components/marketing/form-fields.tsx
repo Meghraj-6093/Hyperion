@@ -12,10 +12,7 @@ export function MarketingInput({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label
-          className="text-body-sm-medium text-mistral-ink"
-          htmlFor={id}
-        >
+        <label className="text-body-sm-medium text-mistral-ink" htmlFor={id}>
           {label}
         </label>
       )}
@@ -42,10 +39,7 @@ export function MarketingTextarea({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label
-          className="text-body-sm-medium text-mistral-ink"
-          htmlFor={id}
-        >
+        <label className="text-body-sm-medium text-mistral-ink" htmlFor={id}>
           {label}
         </label>
       )}
