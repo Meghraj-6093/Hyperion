@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@workspace/core/providers/theme-provider";
-import { HyperionNav } from "./components/hyperion-nav";
-import { HyperionFooter } from "./components/hyperion-footer";
 import { GradientBand } from "./components/gradient-band";
+import { HyperionFooter } from "./components/hyperion-footer";
+import { HyperionNav } from "./components/hyperion-nav";
 
 interface LandingLayoutProps {
   children: React.ReactNode;

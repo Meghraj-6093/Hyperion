@@ -52,7 +52,9 @@ export function Counter({
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!isInView) return;
+    if (!isInView) {
+      return;
+    }
 
     // Check reduced motion
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -68,7 +70,7 @@ export function Counter({
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / dur, 1);
       // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - (1 - progress) ** 3;
       setCount(Math.round(eased * target));
 
       if (progress < 1) {
@@ -81,7 +83,9 @@ export function Counter({
 
   return (
     <span className={className}>
-      {prefix}{count.toLocaleString()}{suffix}
+      {prefix}
+      {count.toLocaleString()}
+      {suffix}
     </span>
   );
 }
@@ -123,10 +127,7 @@ export function Marquee({
   const animDir = direction === "left" ? "marquee-left" : "marquee-right";
 
   return (
-    <div
-      className={`overflow-hidden ${className ?? ""}`}
-      data-slot="marquee"
-    >
+    <div className={`overflow-hidden ${className ?? ""}`} data-slot="marquee">
       <div
         className={`flex w-max ${pauseOnHover ? "hover:[animation-play-state:paused]" : ""}`}
         style={{
@@ -169,8 +170,9 @@ export function CornerBrackets({
   const isInView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
-    <div ref={ref} className={className} data-slot="corner-brackets">
+    <div className={className} data-slot="corner-brackets" ref={ref}>
       <svg
+        aria-hidden="true"
         className="pointer-events-none absolute inset-0 size-full"
         fill="none"
         style={{ color }}
@@ -245,8 +247,12 @@ export function StickyPanels({
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
 
-    panelRefs.current.forEach((el, i) => {
-      if (!el) return;
+    const currentRefs = panelRefs.current;
+    for (let i = 0; i < currentRefs.length; i++) {
+      const el = currentRefs[i];
+      if (!el) {
+        continue;
+      }
       const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry?.isIntersecting) {
@@ -257,16 +263,22 @@ export function StickyPanels({
       );
       observer.observe(el);
       observers.push(observer);
-    });
+    }
 
-    return () => observers.forEach((o) => o.disconnect());
+    return () => {
+      for (const o of observers) {
+        o.disconnect();
+      }
+    };
   }, []);
 
   // Measure the active button and position the underline precisely
   useEffect(() => {
     const btn = buttonRefs.current[activeIndex];
     const nav = navRef.current;
-    if (!btn || !nav) return;
+    if (!(btn && nav)) {
+      return;
+    }
     const navRect = nav.getBoundingClientRect();
     const btnRect = btn.getBoundingClientRect();
     setUnderlineStyle({
@@ -276,15 +288,18 @@ export function StickyPanels({
   }, [activeIndex]);
 
   return (
-    <section ref={sectionRef} className={`relative ${className ?? ""}`} data-slot="sticky-panels">
+    <section
+      className={`relative ${className ?? ""}`}
+      data-slot="sticky-panels"
+      ref={sectionRef}
+    >
       {/* Sticky indicator */}
       <div
+        className="sticky top-24 z-10 mx-auto flex max-w-7xl items-center gap-3 overflow-x-auto px-6 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         ref={navRef}
-        className="sticky top-24 z-10 mx-auto flex max-w-7xl items-center gap-3 overflow-x-auto px-6 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {panels.map((p, i) => (
           <button
-            ref={(el) => { buttonRefs.current[i] = el; }}
             className={`shrink-0 whitespace-nowrap text-body-sm-medium transition-colors duration-200 ${
               i === activeIndex
                 ? "text-mistral-primary"
@@ -293,6 +308,9 @@ export function StickyPanels({
             key={p.number}
             onClick={() => {
               panelRefs.current[i]?.scrollIntoView({ behavior: "smooth" });
+            }}
+            ref={(el) => {
+              buttonRefs.current[i] = el;
             }}
             type="button"
           >
@@ -315,12 +333,14 @@ export function StickyPanels({
       <div className="mx-auto max-w-7xl px-6">
         {panels.map((panel, i) => (
           <div
-            key={panel.number}
-            ref={(el) => { panelRefs.current[i] = el; }}
             className="flex min-h-[60vh] items-center gap-8 py-16 md:py-24"
+            key={panel.number}
+            ref={(el) => {
+              panelRefs.current[i] = el;
+            }}
           >
             <div className="flex-1">
-              <span className="font-display text-[5rem] leading-none text-mistral-primary/30 md:text-[8rem]">
+              <span className="font-display text-[5rem] text-mistral-primary/30 leading-none md:text-[8rem]">
                 {panel.number}
               </span>
               <h3 className="mt-2 font-display text-heading-2 text-mistral-ink">
@@ -360,7 +380,9 @@ export function ProgressLine({
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const handleScroll = () => {
       const rect = el.getBoundingClientRect();
@@ -378,9 +400,9 @@ export function ProgressLine({
 
   return (
     <div
-      ref={ref}
       className={`h-1 w-full bg-mistral-hairline ${trackClass ?? ""} ${className ?? ""}`}
       data-slot="progress-line"
+      ref={ref}
     >
       <div
         className={`h-full bg-gradient-to-r from-mistral-primary to-mistral-yellow-saturated transition-[width] duration-150 ${fillClass ?? ""}`}

@@ -1,9 +1,7 @@
 "use client";
 
-import { cn } from "@workspace/ui/lib/utils";
 import { Github, Linkedin, Twitter } from "lucide-react";
 import Link from "next/link";
-import { GradientBand } from "./gradient-band";
 
 const footerSections = [
   {
@@ -46,7 +44,10 @@ const footerSections = [
 
 export function HyperionFooter() {
   return (
-    <footer className="bg-mistral-cream text-mistral-ink" data-slot="hyperion-footer">
+    <footer
+      className="bg-mistral-cream text-mistral-ink"
+      data-slot="hyperion-footer"
+    >
       <div className="mx-auto max-w-7xl px-6 py-section">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-1">
@@ -60,13 +61,25 @@ export function HyperionFooter() {
               The agentic workspace for autonomous software development.
             </p>
             <div className="mt-6 flex gap-4">
-              <Link aria-label="GitHub" className="text-mistral-steel transition-colors hover:text-mistral-primary" href="#">
+              <Link
+                aria-label="GitHub"
+                className="text-mistral-steel transition-colors hover:text-mistral-primary"
+                href="#"
+              >
                 <Github className="size-5" />
               </Link>
-              <Link aria-label="Twitter" className="text-mistral-steel transition-colors hover:text-mistral-primary" href="#">
+              <Link
+                aria-label="Twitter"
+                className="text-mistral-steel transition-colors hover:text-mistral-primary"
+                href="#"
+              >
                 <Twitter className="size-5" />
               </Link>
-              <Link aria-label="LinkedIn" className="text-mistral-steel transition-colors hover:text-mistral-primary" href="#">
+              <Link
+                aria-label="LinkedIn"
+                className="text-mistral-steel transition-colors hover:text-mistral-primary"
+                href="#"
+              >
                 <Linkedin className="size-5" />
               </Link>
             </div>
@@ -74,7 +87,9 @@ export function HyperionFooter() {
 
           {footerSections.map((section) => (
             <div key={section.title}>
-              <h4 className="text-micro-uppercase text-mistral-slate">{section.title}</h4>
+              <h4 className="text-micro-uppercase text-mistral-slate">
+                {section.title}
+              </h4>
               <ul className="mt-4 space-y-3">
                 {section.links.map((link) => (
                   <li key={link.label}>
@@ -91,7 +106,7 @@ export function HyperionFooter() {
           ))}
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-mistral-beige-deep pt-8 sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-mistral-beige-deep border-t pt-8 sm:flex-row">
           <p className="text-micro text-mistral-steel">
             &copy; {new Date().getFullYear()} Hyperion. All rights reserved.
           </p>

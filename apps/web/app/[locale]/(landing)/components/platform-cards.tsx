@@ -103,10 +103,7 @@ export default function PlatformCards({ assets }: PlatformCardsProps) {
         <div className="mx-auto mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-16 lg:grid-cols-6">
           {platformCards.map((platform, i) => (
             <Reveal direction="up" duration={250} index={i} key={platform.name}>
-              <PlatformCard
-                assets={assets}
-                platform={platform}
-              />
+              <PlatformCard assets={assets} platform={platform} />
             </Reveal>
           ))}
         </div>

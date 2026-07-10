@@ -1,10 +1,14 @@
 "use client";
 
-import { Marquee, Counter, StickyPanels } from "../components/motion-primitives";
-import { GradientBand } from "../components/gradient-band";
 import { CodeBlock } from "@workspace/ui/components/marketing/code-block";
-import { Terminal, Cpu, Network, Layout } from "lucide-react";
+import { Cpu, Layout, Network, Terminal } from "lucide-react";
 import Link from "next/link";
+import { GradientBand } from "../components/gradient-band";
+import {
+  Counter,
+  Marquee,
+  StickyPanels,
+} from "../components/motion-primitives";
 
 const techStack: string[] = [
   "No cables  ·  No plugins  ·  No setups  ·  Zero config  ·  16 panes  ·  Agent dispatch  ·  Dependency resolution  ·  Real-time sync  ·  Canvas overlay  ·  Monaco editor  ·  xterm.js  ·  node-pty  ·  WebSocket streaming  ·  Container-native  ·  Open source  ·  ",
@@ -76,10 +80,10 @@ export default function CodingPage() {
               <span className="text-micro-uppercase text-mistral-ink/60">
                 Terminal Multiplexer
               </span>
-              <h1 className="mt-2 font-display text-5xl leading-tight text-mistral-ink md:text-6xl lg:text-hero lg:leading-[1.05] lg:tracking-[-1.5px]">
+              <h1 className="mt-2 font-display text-5xl text-mistral-ink leading-tight md:text-6xl lg:text-hero lg:leading-[1.05] lg:tracking-[-1.5px]">
                 The terminal, reimagined.
               </h1>
-              <p className="mt-6 max-w-xl text-subtitle text-mistral-ink-tint">
+              <p className="mt-6 max-w-xl text-mistral-ink-tint text-subtitle">
                 A multi-pane terminal multiplexer with autonomous AI agent
                 dispatch. Your dev environment, supercharged.
               </p>
@@ -110,17 +114,20 @@ export default function CodingPage() {
       </section>
 
       {/* Marquee tech stack ticker */}
-      <section className="border-y border-mistral-hairline-soft py-4">
-        <Marquee speed={50} pauseOnHover={false}>
+      <section className="border-mistral-hairline-soft border-y py-4">
+        <Marquee pauseOnHover={false} speed={50}>
           <div className="flex items-center gap-8 px-4">
-            {techStack[0]?.split("·").map((item, i) => (
-              <span
-                className="text-body-sm-medium text-mistral-stone whitespace-nowrap"
-                key={i}
-              >
-                {item.trim()}
-              </span>
-            ))}
+            {techStack[0]
+              ?.split("·")
+              .map((item, i) => ({ text: item.trim(), id: `tech-${i}` }))
+              .map(({ text, id }) => (
+                <span
+                  className="whitespace-nowrap text-body-sm-medium text-mistral-stone"
+                  key={id}
+                >
+                  {text}
+                </span>
+              ))}
           </div>
         </Marquee>
       </section>
@@ -129,28 +136,28 @@ export default function CodingPage() {
       <section className="mx-auto max-w-7xl px-6 py-section-lg">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
           <div className="text-center sm:text-left">
-            <p className="font-display text-stat-display text-mistral-ink">
-              <Counter target={16} suffix="" /> <span className="text-heading-2">+</span>
+            <p className="font-display text-mistral-ink text-stat-display">
+              <Counter suffix="" target={16} />{" "}
+              <span className="text-heading-2">+</span>
             </p>
             <p className="mt-2 text-body-sm text-mistral-slate">
               Tiled terminal panes
             </p>
           </div>
           <div className="text-center sm:text-left">
-            <p className="font-display text-stat-display text-mistral-ink">
-              <Counter target={0} suffix="" /> <span className="text-heading-2">ms</span>
+            <p className="font-display text-mistral-ink text-stat-display">
+              <Counter suffix="" target={0} />{" "}
+              <span className="text-heading-2">ms</span>
             </p>
             <p className="mt-2 text-body-sm text-mistral-slate">
               Zero-config setup time
             </p>
           </div>
           <div className="text-center sm:text-left">
-            <p className="font-display text-stat-display text-mistral-ink">
-              <Counter target={100} suffix="%" />
+            <p className="font-display text-mistral-ink text-stat-display">
+              <Counter suffix="%" target={100} />
             </p>
-            <p className="mt-2 text-body-sm text-mistral-slate">
-              Open source
-            </p>
+            <p className="mt-2 text-body-sm text-mistral-slate">Open source</p>
           </div>
         </div>
       </section>

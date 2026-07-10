@@ -127,7 +127,7 @@ export function NewWorkspaceDialog({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="rounded-xl border border-border/80 bg-[#201E18] p-6 shadow-2xl ring-1 ring-white/5 backdrop-blur-md sm:max-w-[420px]">
+      <DialogContent className="border-border/80 shadow-2xl backdrop-blur-md sm:max-w-[420px]">
         <DialogHeader className="gap-1.5 pb-2">
           <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <LayoutGrid className="size-5" />

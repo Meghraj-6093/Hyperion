@@ -59,7 +59,7 @@ export function HyperionNav() {
 
         <div className="hidden items-center gap-4 lg:flex">
           <Link
-            className="inline-flex h-9 items-center justify-center rounded-md bg-mistral-primary px-4 text-button-md text-mistral-on-primary transition-all duration-150 hover:bg-mistral-primary-deep hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex h-9 items-center justify-center rounded-md bg-mistral-primary px-4 text-button-md text-mistral-on-primary transition-all duration-150 hover:scale-[1.02] hover:bg-mistral-primary-deep active:scale-[0.98]"
             href="/contact"
           >
             Get access
@@ -81,7 +81,7 @@ export function HyperionNav() {
         </button>
 
         {menuOpen && (
-          <div className="absolute top-full left-0 right-0 z-10 border-b border-mistral-hairline-soft bg-mistral-canvas px-6 pb-6 pt-2 shadow-lg lg:hidden">
+          <div className="absolute top-full right-0 left-0 z-10 border-mistral-hairline-soft border-b bg-mistral-canvas px-6 pt-2 pb-6 shadow-lg lg:hidden">
             <ul className="space-y-4">
               {navLinks.map((link) => (
                 <li key={link.href}>
@@ -94,7 +94,7 @@ export function HyperionNav() {
                   </Link>
                 </li>
               ))}
-              <li className="border-t border-mistral-hairline-soft pt-4">
+              <li className="border-mistral-hairline-soft border-t pt-4">
                 <Link
                   className="inline-flex h-10 items-center justify-center rounded-md bg-mistral-primary px-5 text-button-md text-mistral-on-primary transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]"
                   href="/contact"

@@ -13,7 +13,6 @@ import {
 } from "@workspace/ui/components/breadcrumb";
 import { Button } from "@workspace/ui/components/button";
 import { Kbd } from "@workspace/ui/components/kbd";
-import { useSidebar } from "@workspace/ui/components/sidebar";
 import { ChevronRight, Search } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -30,14 +29,10 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ pathname, LinkComponent = "a" }: AppHeaderProps) {
-  const { open } = useSidebar();
   const toggleCommandPalette = useCommandPaletteStore((s) => s.toggle);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
 
-  if (!open) {
-    return null;
-  }
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
   const isSettings = pathname === "/settings";

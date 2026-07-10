@@ -1,11 +1,24 @@
 "use client";
 
-import { Marquee, Counter, ProgressLine, staggerContainer, revealVariants } from "../components/motion-primitives";
-import { GradientBand } from "../components/gradient-band";
-import { CornerBrackets } from "../components/motion-primitives";
+import {
+  Box,
+  Columns3,
+  GitBranch,
+  Keyboard,
+  Layout,
+  Palette,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { Layout, Columns3, Palette, Keyboard, GitBranch, Box } from "lucide-react";
 import Link from "next/link";
+import { GradientBand } from "../components/gradient-band";
+import {
+  CornerBrackets,
+  Counter,
+  Marquee,
+  ProgressLine,
+  revealVariants,
+  staggerContainer,
+} from "../components/motion-primitives";
 
 const taglines: string[] = [
   "Agentic workspace  ·  AI-native IDE  ·  Multi-pane terminal  ·  Visual canvas  ·  40+ themes  ·  ",
@@ -78,15 +91,18 @@ export default function ProductPage() {
         </div>
 
         {/* Parallax content */}
-        <div className="relative mx-auto max-w-7xl px-6 pb-section-lg" style={{ marginTop: "-60vh" }}>
+        <div
+          className="relative mx-auto max-w-7xl px-6 pb-section-lg"
+          style={{ marginTop: "-60vh" }}
+        >
           <div className="max-w-2xl pt-16">
             <span className="text-micro-uppercase text-mistral-ink/60">
               Hyperion Workspace
             </span>
-            <h1 className="mt-2 font-display text-5xl leading-tight text-mistral-ink md:text-6xl lg:text-hero lg:leading-[1.05] lg:tracking-[-1.5px]">
+            <h1 className="mt-2 font-display text-5xl text-mistral-ink leading-tight md:text-6xl lg:text-hero lg:leading-[1.05] lg:tracking-[-1.5px]">
               The agentic dev workspace.
             </h1>
-            <p className="mt-6 text-subtitle text-mistral-ink-tint">
+            <p className="mt-6 text-mistral-ink-tint text-subtitle">
               Terminals, agents, code, and canvas — unified in one
               keyboard-first environment. Built for the age of autonomous
               software development.
@@ -118,17 +134,20 @@ export default function ProductPage() {
       </section>
 
       {/* Marquee ticker */}
-      <section className="border-y border-mistral-hairline-soft py-4">
-        <Marquee speed={45} pauseOnHover={false}>
+      <section className="border-mistral-hairline-soft border-y py-4">
+        <Marquee pauseOnHover={false} speed={45}>
           <div className="flex items-center gap-8 px-4">
-            {taglines[0]?.split("·").map((item, i) => (
-              <span
-                className="text-body-sm-medium text-mistral-stone whitespace-nowrap"
-                key={i}
-              >
-                {item.trim()}
-              </span>
-            ))}
+            {taglines[0]
+              ?.split("·")
+              .map((item, i) => ({ text: item.trim(), id: `tagline-${i}` }))
+              .map(({ text, id }) => (
+                <span
+                  className="whitespace-nowrap text-body-sm-medium text-mistral-stone"
+                  key={id}
+                >
+                  {text}
+                </span>
+              ))}
           </div>
         </Marquee>
       </section>
@@ -143,8 +162,8 @@ export default function ProductPage() {
             { target: 100, suffix: "%", label: "Open source" },
           ].map((stat) => (
             <div className="text-center" key={stat.label}>
-              <p className="font-display text-stat-display text-mistral-ink">
-                <Counter target={stat.target} suffix={stat.suffix} />
+              <p className="font-display text-mistral-ink text-stat-display">
+                <Counter suffix={stat.suffix} target={stat.target} />
               </p>
               <p className="mt-2 text-body-sm text-mistral-slate">
                 {stat.label}
@@ -162,21 +181,21 @@ export default function ProductPage() {
         <motion.div
           className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
           initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-80px" }}
           variants={staggerContainer}
+          viewport={{ once: true, margin: "-80px" }}
+          whileInView="visible"
         >
           {features.map((feature) => {
             const Icon = feature.icon;
             return (
               <motion.div
+                className="group relative overflow-hidden rounded-xl border border-mistral-hairline-soft bg-mistral-canvas p-8 transition-all duration-200 hover:shadow-mistral-level-2"
                 key={feature.title}
                 variants={revealVariants}
-                className="group relative overflow-hidden rounded-xl border border-mistral-hairline-soft bg-mistral-canvas p-8 transition-all duration-200 hover:shadow-mistral-level-2"
               >
                 {/* Top gradient accent line */}
                 <div
-                  className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${feature.gradient} origin-left transition-transform duration-300`}
+                  className={`absolute top-0 right-0 left-0 h-1 bg-gradient-to-r ${feature.gradient} origin-left transition-transform duration-300`}
                 />
                 <Icon className="size-8 text-mistral-primary" />
                 <h3 className="mt-4 text-heading-4 text-mistral-ink">
@@ -197,21 +216,41 @@ export default function ProductPage() {
           <h2 className="text-center font-display text-heading-1 text-mistral-ink">
             Product timeline
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-subtitle text-mistral-slate">
+          <p className="mx-auto mt-4 max-w-2xl text-center text-mistral-slate text-subtitle">
             From terminal multiplexer to full agentic workspace — the journey so
             far.
           </p>
 
           <div className="relative mt-16 space-y-16">
             {/* Vertical line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-mistral-hairline md:left-1/2 md:-translate-x-px" />
+            <div className="absolute top-0 bottom-0 left-8 w-0.5 bg-mistral-hairline md:left-1/2 md:-translate-x-px" />
 
             {[
-              { year: "Q1 2025", title: "Multi-pane terminal", desc: "16-pane xterm.js terminal grid with drag-and-drop layout engine." },
-              { year: "Q2 2025", title: "Kanban task board", desc: "@dnd-kit powered board with drag-to-dispatch agent integration." },
-              { year: "Q3 2025", title: "AI agent swarm", desc: "Autonomous agent dispatch, dependency resolution, and pipeline chaining." },
-              { year: "Q4 2025", title: "Canvas overlay", desc: "Real-time agent execution traces and system topology visualization." },
-              { year: "2026+", title: "Community & ecosystem", desc: "Plugin system, custom agent runtimes, and collaborative workspaces." },
+              {
+                year: "Q1 2025",
+                title: "Multi-pane terminal",
+                desc: "16-pane xterm.js terminal grid with drag-and-drop layout engine.",
+              },
+              {
+                year: "Q2 2025",
+                title: "Kanban task board",
+                desc: "@dnd-kit powered board with drag-to-dispatch agent integration.",
+              },
+              {
+                year: "Q3 2025",
+                title: "AI agent swarm",
+                desc: "Autonomous agent dispatch, dependency resolution, and pipeline chaining.",
+              },
+              {
+                year: "Q4 2025",
+                title: "Canvas overlay",
+                desc: "Real-time agent execution traces and system topology visualization.",
+              },
+              {
+                year: "2026+",
+                title: "Community & ecosystem",
+                desc: "Plugin system, custom agent runtimes, and collaborative workspaces.",
+              },
             ].map((item, i) => (
               <div
                 className={`relative flex flex-col gap-4 md:flex-row md:items-start ${
@@ -222,10 +261,18 @@ export default function ProductPage() {
                 {/* Timeline dot */}
                 <div className="absolute left-8 z-10 size-4 -translate-x-1/2 rounded-full border-2 border-mistral-primary bg-mistral-canvas md:left-1/2" />
                 {/* Content */}
-                <div className={`ml-16 md:ml-0 md:w-1/2 ${i % 2 === 0 ? "md:pr-12 md:text-right" : "md:pl-12"}`}>
-                  <span className="text-micro-uppercase text-mistral-primary">{item.year}</span>
-                  <h3 className="mt-1 text-heading-4 text-mistral-ink">{item.title}</h3>
-                  <p className="mt-1 text-body-sm text-mistral-steel">{item.desc}</p>
+                <div
+                  className={`ml-16 md:ml-0 md:w-1/2 ${i % 2 === 0 ? "md:pr-12 md:text-right" : "md:pl-12"}`}
+                >
+                  <span className="text-micro-uppercase text-mistral-primary">
+                    {item.year}
+                  </span>
+                  <h3 className="mt-1 text-heading-4 text-mistral-ink">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-body-sm text-mistral-steel">
+                    {item.desc}
+                  </p>
                 </div>
               </div>
             ))}

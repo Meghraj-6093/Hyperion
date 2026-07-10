@@ -1,12 +1,12 @@
 "use client";
 
-import { CornerBrackets } from "../components/motion-primitives";
-import { FAQ } from "@workspace/ui/components/marketing/faq";
 import { MarketingCard } from "@workspace/ui/components/marketing/card";
-import { GradientBand } from "../components/gradient-band";
+import { FAQ } from "@workspace/ui/components/marketing/faq";
 import { cn } from "@workspace/ui/lib/utils";
-import { Check, Sparkles, Users, Bot, Eye } from "lucide-react";
+import { Bot, Check, Eye, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
+import { GradientBand } from "../components/gradient-band";
+import { CornerBrackets } from "../components/motion-primitives";
 
 const roles = [
   {
@@ -113,7 +113,7 @@ export default function ServicesPage() {
           <h1 className="font-display text-heading-1 text-mistral-ink">
             Choose your role.
           </h1>
-          <p className="mt-4 text-subtitle text-mistral-ink-tint">
+          <p className="mt-4 text-mistral-ink-tint text-subtitle">
             Hyperion adapts to how you work — from solo developer to team
             orchestrator to autonomous agent operator.
           </p>
@@ -121,22 +121,22 @@ export default function ServicesPage() {
       </section>
 
       {/* Role-tier cards */}
-      <section className="mx-auto max-w-7xl px-6 pb-section-lg pt-12">
+      <section className="mx-auto max-w-7xl px-6 pt-12 pb-section-lg">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {roles.map((role) => {
             const Icon = role.icon;
             return (
               <MarketingCard
-                key={role.name}
-                variant={role.featured ? "cream" : "base"}
-                padding="xxl"
                 className={cn(
                   "relative flex flex-col",
                   role.featured && "border-2 border-mistral-primary"
                 )}
+                key={role.name}
+                padding="xxl"
+                variant={role.featured ? "cream" : "base"}
               >
                 {role.featured && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-mistral-primary px-4 py-1 text-caption-bold text-mistral-on-primary whitespace-nowrap">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-mistral-primary px-4 py-1 text-caption-bold text-mistral-on-primary">
                     Flagship role
                   </span>
                 )}
@@ -149,7 +149,10 @@ export default function ServicesPage() {
                 </p>
                 <ul className="mt-6 flex-1 space-y-3">
                   {role.features.map((f) => (
-                    <li className="flex items-start gap-2 text-body-sm text-mistral-ink-tint" key={f}>
+                    <li
+                      className="flex items-start gap-2 text-body-sm text-mistral-ink-tint"
+                      key={f}
+                    >
                       <Check className="mt-0.5 size-4 shrink-0 text-mistral-primary" />
                       <span>{f}</span>
                     </li>
@@ -160,8 +163,8 @@ export default function ServicesPage() {
                     className={cn(
                       "inline-flex h-10 w-full items-center justify-center rounded-md px-5 text-button-md transition-all duration-150 active:scale-[0.98]",
                       role.featured
-                        ? "bg-mistral-primary text-mistral-on-primary hover:bg-mistral-primary-deep hover:scale-[1.02]"
-                        : "border border-mistral-hairline-strong bg-mistral-canvas text-mistral-ink hover:bg-mistral-surface hover:scale-[1.02]"
+                        ? "bg-mistral-primary text-mistral-on-primary hover:scale-[1.02] hover:bg-mistral-primary-deep"
+                        : "border border-mistral-hairline-strong bg-mistral-canvas text-mistral-ink hover:scale-[1.02] hover:bg-mistral-surface"
                     )}
                     href={role.href}
                   >

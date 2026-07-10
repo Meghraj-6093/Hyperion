@@ -1,15 +1,17 @@
 "use client";
 
 import { Badge } from "@workspace/ui/components/marketing/badge";
-import { GradientBand } from "../../components/gradient-band";
-import { CornerBrackets } from "../../components/motion-primitives";
 import { ArrowLeft, Calendar } from "lucide-react";
 import Link from "next/link";
+import { GradientBand } from "../../components/gradient-band";
+import { CornerBrackets } from "../../components/motion-primitives";
+
+const BULLET_BOLD_REGEX = /- \*\*(.+?)\*\*: (.+)/;
 
 export default function NewsDetailPage({
-  params,
+  _params,
 }: {
-  params: Promise<{ slug: string }>;
+  _params: Promise<{ slug: string }>;
 }) {
   const entry = {
     title: "v0.1.0 — Terminal Multiplexer + Agent Dispatch",
@@ -54,7 +56,9 @@ The next release will focus on the dependency resolution engine — chaining mul
 
       <div className="flex flex-wrap items-center gap-3">
         {entry.tags.map((tag) => (
-          <Badge key={tag} variant="cream">{tag}</Badge>
+          <Badge key={tag} variant="cream">
+            {tag}
+          </Badge>
         ))}
         <span className="flex items-center gap-1 text-caption text-mistral-stone">
           <Calendar className="size-3.5" />
@@ -67,47 +71,66 @@ The next release will focus on the dependency resolution engine — chaining mul
       </h1>
 
       <div className="mt-10 space-y-6">
-        {entry.content.split("\n").map((line, i) => {
-          if (line.startsWith("## ")) {
-            return (
-              <h2 className="mt-10 mb-4 font-display text-heading-2 text-mistral-ink" key={i}>
-                {line.slice(3)}
-              </h2>
-            );
-          }
-          if (line.startsWith("### ")) {
-            return (
-              <h3 className="mt-8 mb-3 text-heading-3 text-mistral-ink" key={i}>
-                {line.slice(4)}
-              </h3>
-            );
-          }
-          if (line.startsWith("- **")) {
-            const match = line.match(/- \*\*(.+?)\*\*: (.+)/);
-            if (match) {
+        {entry.content
+          .split("\n")
+          .map((line, idx) => ({ text: line, id: `line-${idx}` }))
+          .map(({ text: line, id }) => {
+            if (line.startsWith("## ")) {
               return (
-                <li className="text-body-md text-mistral-slate ml-6 list-disc" key={i}>
-                  <strong className="text-mistral-ink">{match[1]}</strong>:{match[2]}
+                <h2
+                  className="mt-10 mb-4 font-display text-heading-2 text-mistral-ink"
+                  key={id}
+                >
+                  {line.slice(3)}
+                </h2>
+              );
+            }
+            if (line.startsWith("### ")) {
+              return (
+                <h3
+                  className="mt-8 mb-3 text-heading-3 text-mistral-ink"
+                  key={id}
+                >
+                  {line.slice(4)}
+                </h3>
+              );
+            }
+            if (line.startsWith("- **")) {
+              const match = line.match(BULLET_BOLD_REGEX);
+              if (match) {
+                return (
+                  <li
+                    className="ml-6 list-disc text-body-md text-mistral-slate"
+                    key={id}
+                  >
+                    <strong className="text-mistral-ink">{match[1]}</strong>:
+                    {match[2]}
+                  </li>
+                );
+              }
+            }
+            if (line.startsWith("- ")) {
+              return (
+                <li
+                  className="ml-6 list-disc text-body-md text-mistral-slate"
+                  key={id}
+                >
+                  {line.slice(2)}
                 </li>
               );
             }
-          }
-          if (line.startsWith("- ")) {
+            if (line.trim() === "") {
+              return <br key={id} />;
+            }
             return (
-              <li className="text-body-md text-mistral-slate ml-6 list-disc" key={i}>
-                {line.slice(2)}
-              </li>
+              <p
+                className="text-body-md text-mistral-slate leading-relaxed"
+                key={id}
+              >
+                {line}
+              </p>
             );
-          }
-          if (line.trim() === "") {
-            return <br key={i} />;
-          }
-          return (
-            <p className="text-body-md text-mistral-slate leading-relaxed" key={i}>
-              {line}
-            </p>
-          );
-        })}
+          })}
       </div>
 
       <div className="relative mt-16 rounded-xl bg-mistral-cream px-8 py-12 text-center">

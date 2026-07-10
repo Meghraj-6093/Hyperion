@@ -1,13 +1,13 @@
 "use client";
 
+import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
 import type * as React from "react";
-import { Reveal } from "./reveal";
 
 interface CodeBlockProps extends React.ComponentProps<"div"> {
+  code?: string;
   header?: string;
   language?: string;
-  code?: string;
   lines?: number;
 }
 
@@ -20,17 +20,22 @@ export function CodeBlock({
   children,
   ...props
 }: CodeBlockProps) {
-  const defaultCode = code ?? `def hello_world():\n    print("Hello, world!")\n\nif __name__ == "__main__":\n    hello_world()`;
+  const defaultCode =
+    code ??
+    `def hello_world():\n    print("Hello, world!")\n\nif __name__ == "__main__":\n    hello_world()`;
 
   return (
     <Reveal direction="up" duration={350} offset={32}>
       <div
-        className={cn("overflow-hidden rounded-md bg-mistral-surface-code", className)}
+        className={cn(
+          "overflow-hidden rounded-md bg-mistral-surface-code",
+          className
+        )}
         data-slot="code-block"
         {...props}
       >
         {/* Header bar */}
-        <div className="flex items-center gap-2 border-b border-white/10 bg-mistral-surface-code px-4 py-2">
+        <div className="flex items-center gap-2 border-white/10 border-b bg-mistral-surface-code px-4 py-2">
           {/* Traffic light dots */}
           <span className="size-2.5 rounded-full bg-red-500/60" />
           <span className="size-2.5 rounded-full bg-yellow-500/60" />

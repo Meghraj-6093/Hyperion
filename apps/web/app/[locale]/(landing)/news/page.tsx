@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge } from "@workspace/ui/components/marketing/badge";
-import { GradientBand } from "../components/gradient-band";
 import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import Link from "next/link";
+import { GradientBand } from "../components/gradient-band";
 
 const entries = [
   {
@@ -63,7 +63,7 @@ export default function NewsPage() {
         <h1 className="font-display text-heading-1 text-mistral-ink">
           Dev log
         </h1>
-        <p className="mt-4 max-w-2xl text-subtitle text-mistral-ink-tint">
+        <p className="mt-4 max-w-2xl text-mistral-ink-tint text-subtitle">
           Release notes, engineering deep dives, and product updates from the
           Hyperion team.
         </p>
@@ -77,9 +77,11 @@ export default function NewsPage() {
               >
                 <div className="flex flex-wrap items-center gap-3">
                   {entry.tags.map((tag) => (
-                    <Badge key={tag} variant="cream">{tag}</Badge>
+                    <Badge key={tag} variant="cream">
+                      {tag}
+                    </Badge>
                   ))}
-                  <span className="text-caption text-mistral-stone ml-auto">
+                  <span className="ml-auto text-caption text-mistral-stone">
                     {entry.date}
                   </span>
                 </div>
