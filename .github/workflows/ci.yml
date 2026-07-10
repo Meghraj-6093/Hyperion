@@ -17,6 +17,8 @@ jobs:
     name: Quality Gates
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_ZHVtbXktcHVibGlzaGFibGUta2V5"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
