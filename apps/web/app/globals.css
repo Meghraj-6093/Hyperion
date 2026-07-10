@@ -178,11 +178,11 @@
    footer-wordmark.tsx does the reveal. Touch devices have no hover,
    so they get a slightly higher resting opacity instead. */
 .wordmark-base {
-  opacity: 0.08;
+  opacity: 0.06;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .wordmark-base {
-    opacity: 0.035;
+    opacity: 0.025;
   }
 }
