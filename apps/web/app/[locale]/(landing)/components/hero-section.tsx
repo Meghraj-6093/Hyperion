@@ -31,7 +31,7 @@ import { Counter, easeOut, Marquee } from "./motion-primitives";
 
 /* ── Copy ─────────────────────────────────────────────────── */
 
-/* Words from HEADLINE_HIGHLIGHT_FROM onward get the amber shimmer —
+/* Words from HEADLINE_HIGHLIGHT_FROM onward get the shimmer sweep —
    the payoff phrase, what the swarm does for you. */
 const HEADLINE = ["You", "command.", "Agents", "build."];
 const HEADLINE_HIGHLIGHT_FROM = 2;
@@ -143,7 +143,7 @@ function Word({
       className={cn(
         "inline-block will-change-transform",
         highlight &&
-          "landing-shimmer bg-clip-text bg-gradient-to-r from-primary via-[#ffc199] to-primary text-transparent"
+          "landing-shimmer bg-clip-text bg-gradient-to-r from-primary via-muted-foreground to-primary text-transparent"
       )}
       initial={reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(12px)" }}
       transition={{ duration: 0.7, delay, ease: easeOut }}
@@ -347,7 +347,7 @@ export default function HeroSection() {
                 </Link>
               </motion.div>
 
-              {/* Headline — per-word blur reveal, amber shimmer on the payoff word */}
+              {/* Headline — per-word blur reveal, shimmer sweep on the payoff phrase */}
               <h1 className="mx-auto mt-8 max-w-4xl text-balance font-display text-5xl tracking-tight max-md:font-semibold md:text-7xl lg:mt-14 xl:text-[5.25rem]">
                 {HEADLINE.map((word, i) => (
                   <Fragment key={word}>

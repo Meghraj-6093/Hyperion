@@ -22,7 +22,7 @@ import { useEffect, useRef } from "react";
  *     by a CSS transition for a smooth laggy follow.
  *
  * The scene itself: a perspective wireframe grid floor flowing toward
- * the viewer under an amber horizon glow, plus 3D-rotated rings,
+ * the viewer under a soft horizon glow, plus 3D-rotated rings,
  * planes, and soft orbs floating at each depth. Everything is
  * transform/opacity-only and pointer-events-none; the whole field
  * disables its motion under prefers-reduced-motion.
@@ -130,7 +130,7 @@ export function ParallaxField() {
             className="landing-float [transform:rotate3d(0.8,1,0,48deg)] absolute top-[330px] left-[5%] size-40 rounded-2xl border border-border/70"
             style={{ "--float-dur": "9s" } as CSSProperties}
           />
-          {/* Amber-tinged 3D ring */}
+          {/* Accent 3D ring */}
           <div
             className="landing-float [transform:rotate3d(1,0.4,0,66deg)] absolute top-[170px] right-[7%] size-56 rounded-full border border-primary/20 shadow-[0_0_60px_-20px] shadow-primary/30"
             style={{ "--float-dur": "11s", "--float-delay": "-4s" } as CSSProperties}

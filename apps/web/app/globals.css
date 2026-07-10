@@ -14,43 +14,40 @@
 }
 
 /* ==========================================================================
-   Landing (marketing) theme — 60/30/10.
+   Landing (marketing) theme — 60/30/10, strict monochrome.
    Scoped to the (landing) route group via .landing-theme so the in-app
    product UI and docs keep their own palette.
 
-   60% — --background: near-black, the dominant surface everywhere.
-   30% — --card/--popover/--secondary/--muted/--border: a ladder of
-         grays (darkest → lightest: card < secondary/muted < popover <
-         border) that creates elevation/hierarchy without any color.
-   10% — --primary: "Hyperion Aura" — a solar amber anchor (Hyperion,
-         Titan of the sun), the ONE flat brand accent for everyday
-         interactive moments: buttons, active nav, links, focus rings,
-         icons, progress indicators, selected state. Never used as a
-         large fill; audited to stay confined to hairlines, buttons,
-         badges, and dots/cursors. The full multi-hue aura spectrum
-         (amber → magenta → violet → cyan) is reserved exclusively for
-         the footer's traveling border beam — see border-trace.tsx —
-         as the site's one signature color flourish, not spread
-         everywhere.
+   The palette is exactly three anchors — everything else is a step
+   between them:
+     Black    #080705 — 60%: the dominant surface everywhere.
+     Graphite #3A3A3A — 30%: structure. Borders/hairlines use it
+              directly; card/secondary/popover/accent are darker
+              steps on the black→graphite axis (elevation ladder,
+              darkest → lightest: card < popover < secondary < accent).
+     Platinum #EEEEED — 10%: the single point of emphasis. Primary
+              buttons (platinum fill, black text), active nav, focus
+              rings, glows, cursors, highlight dots. No hue anywhere —
+              light itself is the accent.
    ========================================================================== */
 .landing-theme {
-  --background: #0e0e0e;
-  --foreground: #ededed;
-  --card: #16161a;
-  --card-foreground: #ededed;
-  --popover: #1c1c22;
-  --popover-foreground: #ededed;
-  --primary: #ff7a29;
-  --primary-foreground: #180d04;
-  --secondary: #201f26;
-  --secondary-foreground: #ededed;
-  --muted: #201f26;
-  --muted-foreground: #96959e;
-  --accent: #232230;
-  --accent-foreground: #ededed;
-  --border: #2a2a33;
-  --input: #2a2a33;
-  --ring: #ff7a29;
+  --background: #080705;
+  --foreground: #eeeeed;
+  --card: #121110;
+  --card-foreground: #eeeeed;
+  --popover: #1a1918;
+  --popover-foreground: #eeeeed;
+  --primary: #eeeeed;
+  --primary-foreground: #080705;
+  --secondary: #1e1d1c;
+  --secondary-foreground: #eeeeed;
+  --muted: #1e1d1c;
+  --muted-foreground: #969594;
+  --accent: #232221;
+  --accent-foreground: #eeeeed;
+  --border: #3a3a3a;
+  --input: #3a3a3a;
+  --ring: #eeeeed;
 }
 
 /* Slow ambient breathing glow — used behind hero/section headers on the
@@ -104,7 +101,7 @@
 }
 
 /* Single-hue shimmer sweep for the highlighted headline word — stays
-   inside the amber family so the 10% accent rule holds. */
+   between platinum and graphite so the 10% accent rule holds. */
 @keyframes landing-shimmer {
   from {
     background-position: 200% 50%;
