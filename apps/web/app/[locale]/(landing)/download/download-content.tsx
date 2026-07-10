@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { transitionVariants } from "@/lib/animations";
 import { detectPlatform, type Platform } from "@/lib/detect-platform";
 import type { ReleaseData } from "@/lib/github-releases";
+import { DownloadBackdrop } from "../components/download-backdrop";
 import { CtaLink, Eyebrow } from "../components/marketing-kit";
 import PlatformCards from "../components/platform-cards";
 import { platformConfig } from "./platform-mappings";
@@ -38,12 +39,10 @@ export default function DownloadContent({ release }: DownloadContentProps) {
     "#";
 
   return (
-    <main className="overflow-hidden">
-      <div
-        aria-hidden={true}
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[560px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)] landing-glow-breathe"
-      />
-      <section className="pt-24 md:pt-36">
+    <main className="relative overflow-hidden">
+      {/* Galaxy star field — replaces the old static radial glow */}
+      <DownloadBackdrop />
+      <section className="relative z-10 pt-24 md:pt-36">
         <div className="mx-auto max-w-6xl px-6 text-center">
           <AnimatedGroup variants={transitionVariants}>
             <div className="flex justify-center">
