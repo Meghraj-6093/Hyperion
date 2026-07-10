@@ -58,8 +58,11 @@ const footerSections = [
 export function HyperionFooter() {
   return (
     <footer className="px-4 pb-6 md:px-6 md:pb-10" data-slot="hyperion-footer">
+      {/* Panel sits on the page's own black with a border tinted to
+          match it — the silhouette all but disappears at rest, and the
+          traveling BorderTrace light is what draws the edge. */}
       <div
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] border border-foreground/10 bg-card/40 text-foreground backdrop-blur-sm"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] border border-border/25 bg-background text-foreground"
         data-slot="hyperion-footer-panel"
       >
         <BorderTrace radius={PANEL_RADIUS} />
