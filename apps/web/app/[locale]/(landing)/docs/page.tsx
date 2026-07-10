@@ -12,6 +12,7 @@ import {
   Eyebrow,
   FAQ,
 } from "../components/marketing-kit";
+import { DocsBackdrop } from "../components/docs-backdrop";
 
 /* ── Section registry — drives the sidebar and scroll-spy ──── */
 
@@ -211,12 +212,11 @@ export default function DocsPage() {
 
   return (
     <div className="relative">
+      {/* LineWaves — warped platinum contours behind the hero band */}
+      <DocsBackdrop />
+
       {/* Hero */}
-      <section className="relative pt-36 pb-10">
-        <div
-          aria-hidden={true}
-          className="landing-glow-breathe -z-10 pointer-events-none absolute inset-x-0 top-0 h-[420px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)]"
-        />
+      <section className="relative z-10 pt-36 pb-10">
         <div className="mx-auto max-w-7xl px-6">
           <Eyebrow>Documentation</Eyebrow>
           <h1 className="mt-3 font-display text-4xl text-foreground tracking-tighter md:text-6xl">
@@ -229,7 +229,7 @@ export default function DocsPage() {
         </div>
       </section>
 
-      <div className="mx-auto flex max-w-7xl gap-12 px-6 pb-24 md:pb-32">
+      <div className="relative z-10 mx-auto flex max-w-7xl gap-12 px-6 pb-24 md:pb-32">
         {/* Sidebar */}
         <aside className="hidden w-52 shrink-0 lg:block">
           <nav className="sticky top-32 space-y-0.5">
