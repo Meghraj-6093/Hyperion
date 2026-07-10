@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthStore } from "@workspace/core/stores/auth-store";
+import { useAuth } from "@clerk/clerk-react";
 import { useRouter } from "@workspace/i18n/navigation";
 import { useEffect } from "react";
 
@@ -9,20 +9,16 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { initialize, loading, user } = useAuthStore();
+  const { isLoaded, userId } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
-
-  useEffect(() => {
-    if (!(loading || user)) {
+    if (isLoaded && !userId) {
       router.push("/sign-in");
     }
-  }, [loading, user, router]);
+  }, [isLoaded, userId, router]);
 
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-muted-foreground text-sm">Loading...</p>
@@ -30,9 +26,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
   }
 
-  if (!user) {
+  if (!userId) {
     return null;
   }
 
-  return children;
+  return <>{children}</>;
 }

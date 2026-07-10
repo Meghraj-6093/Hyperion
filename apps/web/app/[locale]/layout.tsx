@@ -1,4 +1,5 @@
 import { siteConfig } from "@workspace/core/config/site";
+import { ClerkProvider } from "@workspace/core/providers/clerk-provider";
 import { themeInitScript } from "@workspace/core/scripts/theme-init";
 import { hasLocale, NextIntlClientProvider } from "@workspace/i18n";
 import { routing } from "@workspace/i18n/routing";
@@ -87,19 +88,21 @@ export default async function RootLayout({
     <html lang={locale} suppressHydrationWarning={true}>
       <head>
         <script
-          suppressHydrationWarning
           // biome-ignore lint/security/noDangerouslySetInnerHtml: Trusted script
           dangerouslySetInnerHTML={{
             __html: themeInitScript,
           }}
+          suppressHydrationWarning
         />
       </head>
       <body
         className={`${fontSans.variable} ${fontMono.variable} font-sans antialiased`}
       >
-        <SerwistProvider swUrl="/serwist/sw.js">
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        </SerwistProvider>
+        <ClerkProvider>
+          <SerwistProvider swUrl="/serwist/sw.js">
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </SerwistProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
