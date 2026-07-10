@@ -68,7 +68,7 @@ function CommandMenuItem({
   return (
     <CommandItem
       className={cn(
-        "h-9 rounded-md border border-transparent px-3! font-medium data-[selected=true]:border-input data-[selected=true]:bg-input/50",
+        "h-9 rounded-md border border-transparent px-3! font-medium transition-all duration-100 ease-out data-[selected=true]:scale-[1.008] data-[selected=true]:border-input data-[selected=true]:bg-input/50 data-[selected=true]:shadow-2xs",
         className
       )}
       {...props}

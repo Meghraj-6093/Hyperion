@@ -18,8 +18,11 @@ type FitAddonInstance = any;
 
 // Module-level cache for xterm dynamic imports to optimize workspace switching
 let xtermPromise: Promise<{
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic import
   Terminal: any;
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic import
   FitAddon: any;
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic import
   WebLinksAddon: any;
 }> | null = null;
 
@@ -44,17 +47,17 @@ function TerminalPlaceholder({ shellType }: { shellType: string }) {
   const promptColor = isWin ? "text-blue-500/50" : "text-emerald-500/50";
 
   return (
-    <div className="absolute inset-0 flex flex-col gap-2.5 p-4 font-mono text-xs select-none pointer-events-none bg-[#08080a] z-10">
-      <div className="flex items-center gap-1.5 opacity-60 animate-pulse">
+    <div className="pointer-events-none absolute inset-0 z-10 flex select-none flex-col gap-2.5 bg-[#08080a] p-4 font-mono text-xs">
+      <div className="flex animate-pulse items-center gap-1.5 opacity-60">
         <span className={`${promptColor} font-bold`}>{prompt}</span>
         <div className="h-3.5 w-20 rounded bg-muted-foreground/15" />
       </div>
-      <div className="h-3.5 w-[85%] rounded bg-muted-foreground/10 animate-pulse [animation-delay:150ms]" />
-      <div className="h-3.5 w-[65%] rounded bg-muted-foreground/10 animate-pulse [animation-delay:300ms]" />
-      <div className="h-3.5 w-[75%] rounded bg-muted-foreground/10 animate-pulse [animation-delay:450ms]" />
-      <div className="flex items-center gap-1.5 opacity-60 mt-1 animate-pulse [animation-delay:600ms]">
+      <div className="h-3.5 w-[85%] animate-pulse rounded bg-muted-foreground/10 [animation-delay:150ms]" />
+      <div className="h-3.5 w-[65%] animate-pulse rounded bg-muted-foreground/10 [animation-delay:300ms]" />
+      <div className="h-3.5 w-[75%] animate-pulse rounded bg-muted-foreground/10 [animation-delay:450ms]" />
+      <div className="mt-1 flex animate-pulse items-center gap-1.5 opacity-60 [animation-delay:600ms]">
         <span className={`${promptColor} font-bold`}>{prompt}</span>
-        <span className="w-1.5 h-3.5 bg-muted-foreground/45 animate-pulse" />
+        <span className="h-3.5 w-1.5 animate-pulse bg-muted-foreground/45" />
       </div>
     </div>
   );
@@ -199,6 +202,42 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
     let observer: ResizeObserver | undefined;
     let unlistenStdout: (() => void) | undefined;
 
+    async function setupTauri(term: TerminalInstance) {
+      const { isTauri, invoke } = await import("@tauri-apps/api/core");
+      const { listen } = await import("@tauri-apps/api/event");
+
+      if (!isTauri() || disposed) {
+        return false;
+      }
+
+      const cols = term.cols;
+      const rows = term.rows;
+
+      await invoke("create_terminal", { id, cols, rows });
+
+      const history = await invoke<string>("get_terminal_history", { id });
+      if (history && !disposed) {
+        term.write(history);
+      }
+
+      unlistenStdout = await listen<string>(
+        `terminal-stdout-${id}`,
+        (event) => {
+          if (!disposed) {
+            term.write(event.payload);
+          }
+        }
+      );
+
+      term.onData((data: string) => {
+        invoke("write_terminal", { id, data }).catch((err) => {
+          term.writeln(`\r\n\x1b[31mError writing to terminal: ${err}\x1b[0m`);
+        });
+      });
+
+      return true;
+    }
+
     async function init() {
       const { Terminal, FitAddon, WebLinksAddon } = await loadXterm();
 
@@ -265,44 +304,13 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
       }
 
       try {
-        const { isTauri, invoke } = await import("@tauri-apps/api/core");
-        const { listen } = await import("@tauri-apps/api/event");
-
-        if (isTauri() && !disposed) {
-          const cols = term.cols;
-          const rows = term.rows;
-
-          await invoke("create_terminal", { id, cols, rows });
-
-          const history = await invoke<string>("get_terminal_history", { id });
-          if (history) {
-            term.write(history);
-          }
-
-          unlistenStdout = await listen<string>(
-            `terminal-stdout-${id}`,
-            (event) => {
-              if (!disposed) {
-                term.write(event.payload);
-              }
-            }
-          );
-
-          term.onData((data: string) => {
-            invoke("write_terminal", { id, data }).catch((err) => {
-              term.writeln(
-                `\r\n\x1b[31mError writing to terminal: ${err}\x1b[0m`
-              );
-            });
-          });
-        } else {
+        const isTauriActive = await setupTauri(term);
+        if (!isTauriActive) {
           setupMockShell(term);
-        }
-        if (!disposed) {
-          setIsTerminalReady(true);
         }
       } catch {
         setupMockShell(term);
+      } finally {
         if (!disposed) {
           setIsTerminalReady(true);
         }
@@ -331,6 +339,19 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
       if (unlistenStdout) {
         unlistenStdout();
       }
+
+      // Close the PTY process in Rust backend to prevent process leakage
+      import("@tauri-apps/api/core")
+        .then(({ isTauri, invoke }) => {
+          if (isTauri()) {
+            invoke("close_terminal", { id }).catch(() => {
+              // ignore error
+            });
+          }
+        })
+        .catch(() => {
+          // ignore error
+        });
     };
   }, [id, mounted, setupMockShell]);
 
@@ -390,7 +411,7 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
 
   if (!mounted) {
     return (
-      <div className="flex flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md h-full">
+      <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md">
         {/* Title Bar / Header Skeleton */}
         <div className="flex h-6.5 shrink-0 items-center justify-between border-border/20 border-b bg-[#0f0f12] px-3">
           <div className="flex items-center gap-2">
@@ -399,7 +420,7 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
             </span>
           </div>
         </div>
-        <div className="relative flex-1 overflow-hidden min-h-0 bg-[#08080a]">
+        <div className="relative flex-1 overflow-hidden bg-[#08080a]">
           <TerminalPlaceholder shellType="Local Shell" />
         </div>
       </div>
@@ -407,7 +428,7 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md transition-all duration-300 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 hover:shadow-lg h-full">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border/30 bg-[#08080a] shadow-md transition-all duration-300 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 hover:shadow-lg">
       {/* Title Bar / Header */}
       <div className="flex h-6.5 shrink-0 items-center justify-between border-border/20 border-b bg-[#0f0f12] px-3">
         <div className="flex items-center gap-2">
@@ -442,30 +463,36 @@ export function TerminalPane({ id, title }: TerminalPaneProps) {
       </div>
 
       {/* xterm.js Container / Animated Transition */}
-      <div className="relative flex-1 overflow-hidden bg-[#08080a]" style={{ minHeight: 0 }}>
+      <div
+        className="relative flex-1 overflow-hidden bg-[#08080a]"
+        style={{ minHeight: 0 }}
+      >
         <AnimatePresence initial={false}>
           {!isTerminalReady && (
             <motion.div
-              key="placeholder"
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18, ease: "easeInOut" }}
               className="absolute inset-0 z-10"
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 1 }}
+              key="placeholder"
+              transition={{ duration: 0.18, ease: "easeInOut" }}
             >
               <TerminalPlaceholder shellType={shellType} />
             </motion.div>
           )}
         </AnimatePresence>
         <motion.div
-          animate={{ opacity: isTerminalReady ? 1 : 0, y: isTerminalReady ? 0 : 4 }}
-          className="w-full h-full"
+          animate={{
+            opacity: isTerminalReady ? 1 : 0,
+            y: isTerminalReady ? 0 : 4,
+          }}
+          className="h-full w-full"
           initial={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         >
           {/* biome-ignore lint/a11y/useSemanticElements: xterm.js container is non-semantic */}
           <div
             aria-label={`${title} terminal`}
-            className="w-full h-full p-1 focus:outline-none"
+            className="h-full w-full p-1 focus:outline-none"
             ref={containerRef}
             role="textbox"
             tabIndex={0}

@@ -19,6 +19,7 @@ import {
   Terminal,
   Trash2,
 } from "lucide-react";
+import { motion } from "motion/react";
 import { useCallback, useState } from "react";
 
 interface WorkspaceNavProps {
@@ -116,7 +117,11 @@ export function WorkspaceNav({ navigate, onNewWorkspace }: WorkspaceNavProps) {
             return (
               <SidebarMenuItem className="group/item relative" key={ws.id}>
                 {isActive && (
-                  <div className="absolute top-2 bottom-2 left-0.5 z-20 w-[3px] rounded-r bg-primary" />
+                  <motion.div
+                    className="absolute top-2 bottom-2 left-0.5 z-20 w-[3px] rounded-r bg-primary"
+                    layoutId="activeWorkspaceIndicator"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
                 )}
 
                 {renamingId === ws.id ? (
@@ -140,7 +145,7 @@ export function WorkspaceNav({ navigate, onNewWorkspace }: WorkspaceNavProps) {
                   <>
                     <SidebarMenuButton
                       className={cn(
-                        "relative h-9.5 w-full justify-start gap-2 rounded-lg border border-transparent pr-14 pl-3 transition-all group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:pr-2",
+                        "relative h-9.5 w-full justify-start gap-2 rounded-lg border border-transparent pr-14 pl-3 transition-all duration-150 hover:scale-[1.015] active:scale-[0.97] group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:pr-2",
                         isActive
                           ? "border-border/40 bg-muted/60 font-semibold text-foreground shadow-2xs"
                           : "font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground"

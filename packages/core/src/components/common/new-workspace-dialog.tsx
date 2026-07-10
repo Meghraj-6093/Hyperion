@@ -176,7 +176,7 @@ export function NewWorkspaceDialog({
                 return (
                   <button
                     className={cn(
-                      "group relative flex h-16 flex-col items-center justify-center gap-2 rounded-lg border font-semibold text-sm transition-all",
+                      "group relative flex h-16 flex-col items-center justify-center gap-2 rounded-lg border font-semibold text-sm transition-all duration-150 hover:scale-[1.015] active:scale-[0.96]",
                       isSelected
                         ? "scale-[1.02] border-primary bg-primary/10 text-primary shadow-sm ring-1 ring-primary/25"
                         : "border-border/60 bg-background/20 text-muted-foreground hover:border-border hover:bg-background/40 hover:text-foreground"
