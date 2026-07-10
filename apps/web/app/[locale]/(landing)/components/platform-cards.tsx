@@ -69,11 +69,15 @@ function PlatformCard({
       beam={recommended}
       className={cn(
         "relative w-full p-6 text-center sm:w-[258px]",
-        recommended && "border-primary/40 shadow-[0_0_32px_-14px] shadow-primary/30"
+        recommended &&
+          "border-primary/40 shadow-[0_0_32px_-14px] shadow-primary/30"
       )}
     >
       {recommended && (
-        <Badge className="absolute top-4 left-1/2 -translate-x-1/2" variant="solid">
+        <Badge
+          className="absolute top-4 left-1/2 -translate-x-1/2"
+          variant="solid"
+        >
           Your platform
         </Badge>
       )}
@@ -97,7 +101,10 @@ function PlatformCard({
   );
 }
 
-export default function PlatformCards({ assets, detectedPlatform }: PlatformCardsProps) {
+export default function PlatformCards({
+  assets,
+  detectedPlatform,
+}: PlatformCardsProps) {
   return (
     <section className="py-16 md:py-32">
       <div className="mx-auto max-w-6xl px-6">
@@ -114,7 +121,13 @@ export default function PlatformCards({ assets, detectedPlatform }: PlatformCard
         </Reveal>
         <div className="mx-auto mt-8 flex flex-wrap items-stretch justify-center gap-5 md:mt-16">
           {platformCards.map((platform, i) => (
-            <Reveal direction="up" duration={350} index={i} key={platform.name} offset={32}>
+            <Reveal
+              direction="up"
+              duration={350}
+              index={i}
+              key={platform.name}
+              offset={32}
+            >
               <PlatformCard
                 assets={assets}
                 platform={platform}
@@ -139,7 +152,7 @@ const CardDecorator = ({ children }: { children: ReactNode }) => (
       className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] bg-size-[24px_24px] opacity-50"
     />
 
-    <div className="absolute inset-0 m-auto flex size-12 items-center justify-center rounded-lg border border-border bg-secondary transition-transform duration-300 group-hover/card:scale-110 group-hover/card:-rotate-3">
+    <div className="absolute inset-0 m-auto flex size-12 items-center justify-center rounded-lg border border-border bg-secondary transition-transform duration-300 group-hover/card:-rotate-3 group-hover/card:scale-110">
       {children}
     </div>
   </div>

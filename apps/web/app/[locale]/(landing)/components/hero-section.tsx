@@ -69,25 +69,29 @@ const FEATURES = [
   {
     icon: LayoutGrid,
     title: "Workspace System",
-    description: "Tile terminals, editors, and previews into one adaptive canvas.",
+    description:
+      "Tile terminals, editors, and previews into one adaptive canvas.",
     href: "/product",
   },
   {
     icon: SquareTerminal,
     title: "Terminal Multiplexer",
-    description: "Run and manage dozens of shells side by side without leaving the browser.",
+    description:
+      "Run and manage dozens of shells side by side without leaving the browser.",
     href: "/coding",
   },
   {
     icon: Bot,
     title: "AI Agent Swarm",
-    description: "Delegate tasks to autonomous agents that work your codebase in parallel.",
+    description:
+      "Delegate tasks to autonomous agents that work your codebase in parallel.",
     href: "/coding",
   },
   {
     icon: SquareKanban,
     title: "Task Board",
-    description: "Every agent's task tracked on a live kanban you can reorder mid-flight.",
+    description:
+      "Every agent's task tracked on a live kanban you can reorder mid-flight.",
     href: "/product",
   },
 ];
@@ -143,9 +147,11 @@ function Word({
       className={cn(
         "inline-block will-change-transform",
         highlight &&
-          "landing-shimmer bg-clip-text bg-gradient-to-r from-primary via-[#ffc199] to-primary text-transparent"
+          "landing-shimmer bg-gradient-to-r from-primary via-[#ffc199] to-primary bg-clip-text text-transparent"
       )}
-      initial={reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(12px)" }}
+      initial={
+        reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(12px)" }
+      }
       transition={{ duration: 0.7, delay, ease: easeOut }}
     >
       {children}
@@ -218,7 +224,7 @@ function SwarmOrbit() {
                 key={di}
                 style={{ transform: `rotate(${(360 / ring.dots) * di}deg)` }}
               >
-                <span className="-translate-x-1/2 -translate-y-1/2 absolute top-0 left-1/2 size-2 rounded-full bg-primary shadow-[0_0_12px_2px] shadow-primary/50" />
+                <span className="absolute top-0 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_12px_2px] shadow-primary/50" />
               </div>
             ))}
           </div>
@@ -230,7 +236,7 @@ function SwarmOrbit() {
         <Bot className="size-7 text-primary" />
         <span
           aria-hidden={true}
-          className="landing-glow-breathe -z-10 absolute inset-0 rounded-2xl bg-primary/20 blur-xl"
+          className="landing-glow-breathe absolute inset-0 -z-10 rounded-2xl bg-primary/20 blur-xl"
         />
       </div>
 
@@ -243,13 +249,17 @@ function SwarmOrbit() {
       </span>
       <span
         className="landing-float absolute top-[42%] right-[2%] rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
-        style={{ "--float-dur": "7s", "--float-delay": "-2.5s" } as CSSProperties}
+        style={
+          { "--float-dur": "7s", "--float-delay": "-2.5s" } as CSSProperties
+        }
       >
         agent-04 · reviewing
       </span>
       <span
         className="landing-float absolute bottom-[12%] left-[10%] rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[10px] text-muted-foreground"
-        style={{ "--float-dur": "5.5s", "--float-delay": "-4s" } as CSSProperties}
+        style={
+          { "--float-dur": "5.5s", "--float-delay": "-4s" } as CSSProperties
+        }
       >
         agent-01 · testing
       </span>
@@ -285,15 +295,18 @@ export default function HeroSection() {
         {/* Breathing single-tone glow */}
         <div
           aria-hidden={true}
-          className="landing-glow-breathe -z-10 pointer-events-none absolute inset-x-0 top-0 h-[640px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_14%,transparent)_0%,transparent_70%)]"
+          className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_14%,transparent)_0%,transparent_70%)]"
         />
         {/* Faint blueprint grid, masked so it dissolves before content */}
         <div
           aria-hidden={true}
-          className="-z-10 pointer-events-none absolute inset-x-0 top-0 h-[720px] opacity-[0.14] [background:linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:radial-gradient(ellipse_62%_52%_at_50%_0%,#000_55%,transparent_100%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] opacity-[0.14] [background-size:44px_44px] [background:linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_62%_52%_at_50%_0%,#000_55%,transparent_100%)]"
         />
         {/* Drifting accent particles */}
-        <div aria-hidden={true} className="-z-10 pointer-events-none absolute inset-x-0 top-0 h-[640px]">
+        <div
+          aria-hidden={true}
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px]"
+        >
           {PARTICLES.map((p) => (
             <span
               className="landing-drift absolute rounded-full bg-primary/60"
@@ -335,7 +348,7 @@ export default function HeroSection() {
                   </span>
                   <span className="block h-4 w-0.5 border-border border-l" />
                   <div className="size-6 overflow-hidden rounded-full bg-background duration-500 group-hover:bg-muted">
-                    <div className="-translate-x-1/2 flex w-12 duration-500 ease-in-out group-hover:translate-x-0">
+                    <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
                       <span className="flex size-6">
                         <ArrowRight className="m-auto size-3" />
                       </span>
@@ -380,7 +393,7 @@ export default function HeroSection() {
                 <CtaLink className="group h-12 px-6 text-base" href="/home">
                   <Play className="size-4" />
                   View Web Demo
-                  <ArrowRight className="-ml-1 -translate-x-1 size-4 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
+                  <ArrowRight className="-ml-1 size-4 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
                 </CtaLink>
                 <CtaLink
                   className="group h-12 px-6 text-base"
@@ -406,7 +419,7 @@ export default function HeroSection() {
           {/* Screenshot — scroll-linked 3D untilt with orbiting border light */}
           <Reveal direction="up" duration={450} offset={48}>
             <div
-              className="mask-b-from-55% -mr-56 relative mt-10 overflow-hidden px-2 [perspective:1200px] sm:mr-0 sm:mt-14 md:mt-20"
+              className="mask-b-from-55% relative mt-10 -mr-56 overflow-hidden px-2 [perspective:1200px] sm:mt-14 sm:mr-0 md:mt-20"
               ref={shotRef}
             >
               <motion.div
@@ -441,7 +454,10 @@ export default function HeroSection() {
               key={cap}
             >
               {cap}
-              <span aria-hidden={true} className="size-1 rounded-full bg-primary/50" />
+              <span
+                aria-hidden={true}
+                className="size-1 rounded-full bg-primary/50"
+              />
             </span>
           ))}
         </Marquee>
@@ -449,14 +465,16 @@ export default function HeroSection() {
 
       {/* ── Stats ── */}
       <section className="bg-card/20">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4 md:divide-border/60 md:divide-x">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 md:grid-cols-4 md:divide-x md:divide-border/60">
           {STATS.map((stat, i) => (
             <Reveal direction="up" duration={300} index={i} key={stat.label}>
               <div className="group flex flex-col items-center gap-1.5 px-4 py-10 text-center">
                 <span className="font-display text-4xl text-foreground transition-colors duration-300 group-hover:text-primary md:text-5xl">
                   <Counter suffix={stat.suffix} target={stat.value} />
                 </span>
-                <span className="text-muted-foreground text-sm">{stat.label}</span>
+                <span className="text-muted-foreground text-sm">
+                  {stat.label}
+                </span>
               </div>
             </Reveal>
           ))}
@@ -478,9 +496,11 @@ export default function HeroSection() {
             <Reveal direction="up" duration={280} index={i} key={feature.title}>
               <GlowCard className="h-full p-6">
                 <div className="flex size-11 items-center justify-center rounded-xl border border-border bg-secondary transition-colors duration-300 group-hover/card:border-primary/40">
-                  <feature.icon className="group-hover/card:-rotate-3 size-5 text-primary transition-transform duration-300 ease-out group-hover/card:scale-110" />
+                  <feature.icon className="size-5 text-primary transition-transform duration-300 ease-out group-hover/card:-rotate-3 group-hover/card:scale-110" />
                 </div>
-                <h3 className="mt-4 font-medium text-foreground">{feature.title}</h3>
+                <h3 className="mt-4 font-medium text-foreground">
+                  {feature.title}
+                </h3>
                 <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
                   {feature.description}
                 </p>
@@ -526,8 +546,16 @@ export default function HeroSection() {
                 </Reveal>
               ))}
             </ul>
-            <Reveal direction="up" duration={240} index={SWARM_CHECKLIST.length}>
-              <CtaLink className="group mt-8 h-10 px-5" href="/coding" variant="ghost">
+            <Reveal
+              direction="up"
+              duration={240}
+              index={SWARM_CHECKLIST.length}
+            >
+              <CtaLink
+                className="group mt-8 h-10 px-5"
+                href="/coding"
+                variant="ghost"
+              >
                 See how agents work
                 <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
               </CtaLink>
@@ -562,7 +590,11 @@ export default function HeroSection() {
       {/* ── Final CTA ── */}
       <section className="mx-auto max-w-5xl px-6 pb-20 md:pb-28">
         <Reveal direction="up" duration={350} offset={36}>
-          <GlowCard beam={true} className="p-10 text-center md:p-16" tilt={false}>
+          <GlowCard
+            beam={true}
+            className="p-10 text-center md:p-16"
+            tilt={false}
+          >
             <h2 className="text-balance font-display font-semibold text-3xl tracking-tight md:text-5xl">
               Stop typing. Start orchestrating.
             </h2>

@@ -1,9 +1,17 @@
 "use client";
 
-import { motion } from "motion/react";
 import { Mail, Sparkles, Terminal } from "lucide-react";
-import { revealVariants, staggerContainer } from "../components/motion-primitives";
-import { Eyebrow, GlowCard, Input, Textarea } from "../components/marketing-kit";
+import { motion } from "motion/react";
+import {
+  Eyebrow,
+  GlowCard,
+  Input,
+  Textarea,
+} from "../components/marketing-kit";
+import {
+  revealVariants,
+  staggerContainer,
+} from "../components/motion-primitives";
 
 const sidebarItems = [
   {
@@ -30,9 +38,13 @@ export default function ContactPage() {
       <section className="relative mx-auto max-w-3xl px-6 pt-36 text-center">
         <div
           aria-hidden={true}
-          className="-z-10 pointer-events-none absolute inset-x-0 top-0 h-[420px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)] landing-glow-breathe"
+          className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_10%,transparent)_0%,transparent_70%)]"
         />
-        <motion.div animate="visible" initial="hidden" variants={staggerContainer}>
+        <motion.div
+          animate="visible"
+          initial="hidden"
+          variants={staggerContainer}
+        >
           <motion.div variants={revealVariants}>
             <Eyebrow>Contact</Eyebrow>
           </motion.div>
@@ -58,10 +70,32 @@ export default function ContactPage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_auto]">
           <GlowCard className="max-w-lg p-8 md:p-10" tilt={false}>
             <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              <Input id="name" label="Name" placeholder="Your name" required type="text" />
-              <Input id="email" label="Email" placeholder="you@company.com" required type="email" />
-              <Input id="role" label="Role" placeholder="Developer / Team Lead / Researcher" type="text" />
-              <Input id="team-size" label="Team size" placeholder="1-5, 5-20, 20+" type="text" />
+              <Input
+                id="name"
+                label="Name"
+                placeholder="Your name"
+                required
+                type="text"
+              />
+              <Input
+                id="email"
+                label="Email"
+                placeholder="you@company.com"
+                required
+                type="email"
+              />
+              <Input
+                id="role"
+                label="Role"
+                placeholder="Developer / Team Lead / Researcher"
+                type="text"
+              />
+              <Input
+                id="team-size"
+                label="Team size"
+                placeholder="1-5, 5-20, 20+"
+                type="text"
+              />
               <Textarea
                 id="use-case"
                 label="Tell us about your project"
@@ -97,7 +131,9 @@ export default function ContactPage() {
                     <Icon className="size-4 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
+                    <h4 className="font-medium text-foreground text-sm">
+                      {item.title}
+                    </h4>
                     <p className="mt-1 text-muted-foreground text-sm leading-relaxed">
                       {item.body}
                     </p>
