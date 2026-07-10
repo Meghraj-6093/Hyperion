@@ -82,28 +82,28 @@ const FEATURES = [
     title: "Workspace System",
     description:
       "Tile terminals, editors, and previews into one adaptive canvas.",
-    href: "/product",
+    href: "/features",
   },
   {
     icon: SquareTerminal,
     title: "Terminal Multiplexer",
     description:
       "Run and manage dozens of shells side by side without leaving the browser.",
-    href: "/coding",
+    href: "/features",
   },
   {
     icon: Bot,
     title: "AI Agent Swarm",
     description:
       "Delegate tasks to autonomous agents that work your codebase in parallel.",
-    href: "/coding",
+    href: "/features",
   },
   {
     icon: SquareKanban,
     title: "Task Board",
     description:
       "Every agent's task tracked on a live kanban you can reorder mid-flight.",
-    href: "/product",
+    href: "/features",
   },
 ];
 
@@ -548,7 +548,7 @@ export default function HeroSection() {
             >
               <CtaLink
                 className="group mt-8 h-10 px-5"
-                href="/coding"
+                href="/features"
                 variant="ghost"
               >
                 See how agents work

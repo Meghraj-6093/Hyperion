@@ -3,7 +3,7 @@
 import { BorderBeam } from "@workspace/ui/components/landing/border-beam";
 import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
-import { Minus, Plus } from "lucide-react";
+import { Check, Copy, Minus, Plus } from "lucide-react";
 import { motion, useReducedMotion, useScroll } from "motion/react";
 import type * as React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -111,6 +111,108 @@ export function GlowCard({
         />
       )}
       <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+/** Copy-to-clipboard icon button — flips to a check for 1.6s. */
+export function CopyButton({
+  className,
+  value,
+  ...props
+}: React.ComponentProps<"button"> & { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
+      className={cn(
+        "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-secondary/60 text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-foreground active:scale-90",
+        className
+      )}
+      data-slot="copy-button"
+      onClick={() => {
+        navigator.clipboard?.writeText(value).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        });
+      }}
+      type="button"
+      {...props}
+    >
+      {copied ? (
+        <Check className="size-3.5 text-primary" />
+      ) : (
+        <Copy className="size-3.5" />
+      )}
+    </button>
+  );
+}
+
+/** One-line command bar — `$ npx hyperion init` with a copy button. */
+export function CommandBar({
+  className,
+  command,
+  ...props
+}: React.ComponentProps<"div"> & { command: string }) {
+  return (
+    <div
+      className={cn(
+        "inline-flex max-w-full items-center gap-3 rounded-full border border-border bg-black/50 py-2 pr-2 pl-4 shadow-black/30 shadow-lg backdrop-blur-sm",
+        className
+      )}
+      data-slot="command-bar"
+      {...props}
+    >
+      <span aria-hidden={true} className="select-none text-primary/70">
+        $
+      </span>
+      <code className="overflow-x-auto whitespace-nowrap font-mono text-foreground/90 text-sm [scrollbar-width:none]">
+        {command}
+      </code>
+      <CopyButton value={command} />
+    </div>
+  );
+}
+
+/** Callout — docs note/tip/warning. Monochrome, differentiated by
+ *  weight rather than hue: tips get a platinum edge, warnings a
+ *  brighter left rule and title. */
+export function Callout({
+  className,
+  variant = "note",
+  title,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  variant?: "note" | "tip" | "warning";
+  title?: string;
+}) {
+  const label =
+    title ?? (variant === "tip" ? "Tip" : variant === "warning" ? "Warning" : "Note");
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-border/60 border-l-2 bg-card/50 px-4 py-3",
+        variant === "warning" && "border-l-foreground/70",
+        variant === "tip" && "border-l-primary/60",
+        variant === "note" && "border-l-border",
+        className
+      )}
+      data-slot="callout"
+      {...props}
+    >
+      <p
+        className={cn(
+          "font-medium text-xs uppercase tracking-[0.14em]",
+          variant === "warning" ? "text-foreground" : "text-foreground/70"
+        )}
+      >
+        {label}
+      </p>
+      <div className="mt-1.5 text-muted-foreground text-sm leading-relaxed">
+        {children}
+      </div>
     </div>
   );
 }

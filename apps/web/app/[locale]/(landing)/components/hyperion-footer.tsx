@@ -27,26 +27,26 @@ const footerSections = [
   {
     title: "Product",
     links: [
-      { label: "Workspace System", href: "/product" },
-      { label: "Terminal Multiplexer", href: "/coding" },
-      { label: "AI Agent Swarm", href: "/coding" },
-      { label: "Task Board", href: "/product" },
+      { label: "Features", href: "/features" },
+      { label: "AI Agent Swarm", href: "/features" },
+      { label: "Terminal Multiplexer", href: "/features" },
+      { label: "Download", href: "/download" },
     ],
   },
   {
     title: "Resources",
     links: [
       { label: "Documentation", href: "/docs" },
-      { label: "Quick start", href: "/docs/quick-start" },
+      { label: "Quick start", href: "/docs#quick-start" },
+      { label: "CLI reference", href: "/docs#cli" },
       { label: "News", href: "/news" },
-      { label: "Download", href: "/download" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "/" },
-      { label: "Careers", href: "/" },
+      { label: "About", href: "/about" },
+      { label: "Careers", href: "/about" },
       { label: "Contact", href: "/contact" },
       { label: "Privacy", href: "/" },
     ],

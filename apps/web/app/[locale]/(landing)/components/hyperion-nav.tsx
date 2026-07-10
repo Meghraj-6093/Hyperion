@@ -13,9 +13,10 @@ const wordmarkFont = Unbounded({
 });
 
 const navLinks = [
-  { label: "Product", href: "/product" },
-  { label: "Coding", href: "/coding" },
-  { label: "Services", href: "/services" },
+  { label: "Features", href: "/features" },
+  { label: "Docs", href: "/docs" },
+  { label: "About", href: "/about" },
+  { label: "News", href: "/news" },
   { label: "Download", href: "/download" },
 ];
 
