@@ -20,10 +20,11 @@ export function GradientBlock({
     <div
       aria-label={label ?? "Placeholder image"}
       className={cn(
-        "flex items-center justify-center bg-gradient-to-br from-mistral-sunshine-700 via-mistral-sunshine-900 to-mistral-primary text-mistral-on-primary text-caption text-center",
+        "flex items-center justify-center bg-gradient-to-br from-mistral-sunshine-700 via-mistral-sunshine-900 to-mistral-primary text-center text-caption text-mistral-on-primary",
         className
       )}
       data-slot="gradient-block"
+      role="img"
       style={{ aspectRatio }}
     >
       <span className="px-4 py-2">

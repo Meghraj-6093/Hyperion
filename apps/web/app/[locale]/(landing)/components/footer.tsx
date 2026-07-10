@@ -127,7 +127,7 @@ export function Footer() {
           {footerLinks.map((section, index) => (
             <AnimatedContainer delay={0.1 + index * 0.1} key={section.label}>
               <div className="mb-10 md:mb-0">
-                <h3 className="text-xs text-mistral-slate">{section.label}</h3>
+                <h3 className="text-mistral-slate text-xs">{section.label}</h3>
                 <ul className="mt-4 space-y-2 text-muted-foreground text-sm">
                   {section.links.map((link) => (
                     <li key={link.title}>
