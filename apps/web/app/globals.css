@@ -180,13 +180,30 @@
   animation: landing-caret-blink var(--caret-dur, 1s) ease-in-out infinite;
 }
 
+/* Suspended-object bob for the hero showcase panel — ±3px over a slow
+   cycle, so the "floating above the page" read never fully settles. */
+@keyframes landing-hover-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.landing-hover-bob {
+  animation: landing-hover-bob 7s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-drift,
   .landing-shimmer,
   .landing-orbit,
   .landing-float,
   .landing-grid-flow,
-  .landing-caret-blink {
+  .landing-caret-blink,
+  .landing-hover-bob {
     animation: none;
   }
 }

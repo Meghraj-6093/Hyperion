@@ -20,6 +20,7 @@ import {
   motion,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
 } from "motion/react";
 import Image from "next/image";
@@ -272,8 +273,26 @@ export default function HeroSection() {
     target: shotRef,
     offset: ["start end", "start 0.35"],
   });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [14, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.94, 1]);
+  // One spring drives every derived value, so the showcase moves as a
+  // single weighty object — no linear interpolation anywhere.
+  const showcaseProgress = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 26,
+    mass: 1.1,
+  });
+  // Never fully flat: the tilt settles at 3.5°, so the panel keeps
+  // reading as a physical object floating in 3D space after the
+  // scroll animation completes.
+  const rotateX = useTransform(showcaseProgress, [0, 1], [17, 3.5]);
+  const scale = useTransform(showcaseProgress, [0, 1], [0.93, 1]);
+  const shotY = useTransform(showcaseProgress, [0, 1], [100, 0]);
+  // As the panel straightens, its shadow softens, spreads, and blurs —
+  // the object lifting further off the page.
+  const shotShadow = useTransform(
+    showcaseProgress,
+    [0, 1],
+    ["0 24px 48px rgba(0, 0, 0, 0.55)", "0 60px 120px rgba(0, 0, 0, 0.45)"]
+  );
 
   useEffect(() => {
     fetchLatestGithubVersion().then((tag) => {
@@ -381,31 +400,42 @@ export default function HeroSection() {
         </div>
       </section>
 
-      {/* ── Screenshot — scroll-linked 3D untilt with orbiting border light ── */}
+      {/* ── Screenshot — spring-eased 3D showcase that never goes flat ── */}
       <section className="relative">
-        <Reveal direction="up" duration={450} offset={48}>
+        <Reveal direction="up" duration={500} offset={0}>
+          {/* The parent owns the 3D scene: deep perspective, with
+              preserve-3d carried down so the tilt renders inside it. */}
           <div
-            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-4 [perspective:1200px] sm:mr-0"
+            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-12 [perspective:2400px] sm:mr-0"
             ref={shotRef}
           >
-            <motion.div
-              className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-border bg-card/40 p-4 shadow-2xl shadow-black/40 will-change-transform"
-              style={{ rotateX, scale, transformPerspective: 1200 }}
-            >
-              <Image
-                alt="Hyperion workspace screenshot"
-                className="relative aspect-15/8 rounded-2xl border border-border/50"
-                height="1080"
-                priority={true}
-                src="/app-screen-dark.png"
-                width="1920"
-              />
-              <BorderBeam
-                className="from-transparent via-primary to-transparent"
-                duration={6}
-                size={200}
-              />
-            </motion.div>
+            {/* Suspended-object bob (±3px) on its own element so it
+                composes with the scroll transforms below. */}
+            <div className="landing-hover-bob [transform-style:preserve-3d]">
+              <motion.div
+                className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-white/[0.07] bg-card/40 p-4 will-change-transform [transform-style:preserve-3d]"
+                style={{ rotateX, scale, y: shotY, boxShadow: shotShadow }}
+              >
+                {/* light catching the upper edge */}
+                <div
+                  aria-hidden={true}
+                  className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                />
+                <Image
+                  alt="Hyperion workspace screenshot"
+                  className="relative aspect-15/8 rounded-2xl border border-border/50"
+                  height="1080"
+                  priority={true}
+                  src="/app-screen-dark.png"
+                  width="1920"
+                />
+                <BorderBeam
+                  className="from-transparent via-primary to-transparent"
+                  duration={6}
+                  size={200}
+                />
+              </motion.div>
+            </div>
           </div>
         </Reveal>
       </section>
