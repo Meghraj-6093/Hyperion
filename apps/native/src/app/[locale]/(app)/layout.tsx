@@ -1,3 +1,5 @@
+"use client";
+
 import { AuthProvider } from "@workspace/core/components/auth/auth-provider";
 import { AppLayout } from "@workspace/core/components/layout/app-layout";
 import { usePathname, useRouter } from "next/navigation";
