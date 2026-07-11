@@ -7,9 +7,23 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface TerminalPaneProps {
+  autoCommand?: string;
+  cwd?: string;
+  directory?: string;
   id: string;
+  index?: number;
   isActiveWorkspace?: boolean;
   title: string;
+}
+
+interface TerminalEventPayload {
+  data: string;
+  offset: number;
+}
+
+interface TerminalHistoryInfo {
+  history: string;
+  total_read: number;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: xterm types are dynamically imported
@@ -40,6 +54,85 @@ function loadXterm() {
     }));
   }
   return xtermPromise;
+}
+
+// Helper to process a single stdout event with deduplication logic
+function handleSingleEvent(
+  term: TerminalInstance,
+  payload: TerminalEventPayload,
+  currentOffsetRef: React.MutableRefObject<number>
+) {
+  const offset = payload.offset;
+  const data = payload.data;
+  const currentOffset = currentOffsetRef.current;
+
+  if (offset + data.length <= currentOffset) {
+    // Ignore already-written bytes
+    return;
+  }
+  if (offset < currentOffset) {
+    // Partial overlap, slice data to write only new content
+    const overlap = currentOffset - offset;
+    term.write(data.slice(overlap));
+    currentOffsetRef.current = offset + data.length;
+  } else {
+    term.write(data);
+    currentOffsetRef.current = offset + data.length;
+  }
+}
+
+// Helper to process and deduplicate a sequence of buffered events
+function processPendingEvents(
+  term: TerminalInstance,
+  events: TerminalEventPayload[],
+  currentOffsetRef: React.MutableRefObject<number>
+) {
+  const sortedEvents = [...events].sort((a, b) => a.offset - b.offset);
+  for (const payload of sortedEvents) {
+    handleSingleEvent(term, payload, currentOffsetRef);
+  }
+}
+
+// Helper to execute startup autoCommand on Tauri environment (staggered delay based on index)
+function executeTauriAutoCommand(
+  id: string,
+  autoCommand: string | undefined,
+  isNew: boolean | undefined,
+  disposed: boolean,
+  index?: number
+) {
+  if (isNew && autoCommand) {
+    const lineEnding = navigator.userAgent.includes("Windows") ? "\r" : "\r\n";
+    const delay = 400 + (index ?? 0) * 150;
+    setTimeout(async () => {
+      if (!disposed) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        invoke("write_terminal", {
+          id,
+          data: `${autoCommand}${lineEnding}`,
+        }).catch(() => {
+          /* ignore */
+        });
+      }
+    }, delay);
+  }
+}
+
+// Helper to execute startup autoCommand on Mock environment
+function executeMockAutoCommand(
+  term: TerminalInstance,
+  autoCommand: string | undefined,
+  directory: string | undefined,
+  handleMockCommand: (cmd: string, term: TerminalInstance) => void
+) {
+  if (autoCommand) {
+    if (directory) {
+      term.write(`cd "${directory}"\r\n`);
+    }
+    term.write(`${autoCommand}\r\n`);
+    handleMockCommand(autoCommand, term);
+    term.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
+  }
 }
 
 function TerminalPlaceholder({ shellType }: { shellType: string }) {
@@ -79,6 +172,10 @@ export function TerminalPane({
   id,
   title,
   isActiveWorkspace = true,
+  cwd,
+  autoCommand,
+  directory,
+  index = 0,
 }: TerminalPaneProps) {
   const mounted = useMounted();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +187,11 @@ export function TerminalPane({
 
   // Buffer input for mock shell
   const inputBufferRef = useRef("");
+
+  // Refs for offset-based terminal data deduplication
+  const pendingEventsRef = useRef<TerminalEventPayload[]>([]);
+  const currentOffsetRef = useRef<number>(0);
+  const isInitializedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const checkEnvironment = async () => {
@@ -223,35 +325,104 @@ export function TerminalPane({
       const { listen } = await import("@tauri-apps/api/event");
 
       if (!isTauri() || disposed) {
-        return false;
+        return { isTauriActive: false };
       }
 
-      const cols = term.cols;
-      const rows = term.rows;
-
-      await invoke("create_terminal", { id, cols, rows });
-
-      const history = await invoke<string>("get_terminal_history", { id });
-      if (history && !disposed) {
-        term.write(history);
-      }
-
-      unlistenStdout = await listen<string>(
+      // 1. Listen for stdout events first to avoid race conditions and lost bytes
+      unlistenStdout = await listen<TerminalEventPayload>(
         `terminal-stdout-${id}`,
         (event) => {
-          if (!disposed) {
-            term.write(event.payload);
+          if (disposed) {
+            return;
+          }
+          const payload = event.payload;
+
+          if (isInitializedRef.current) {
+            handleSingleEvent(term, payload, currentOffsetRef);
+          } else {
+            // Buffer events received while history is loading
+            pendingEventsRef.current.push(payload);
           }
         }
       );
 
+      // 2. Setup user input key event forwarding
       term.onData((data: string) => {
         invoke("write_terminal", { id, data }).catch((err) => {
           term.writeln(`\r\n\x1b[31mError writing to terminal: ${err}\x1b[0m`);
         });
       });
 
-      return true;
+      // 3. Spawns/attaches backend session
+      const cols = term.cols > 0 ? term.cols : 80;
+      const rows = term.rows > 0 ? term.rows : 24;
+      const isNew = await invoke<boolean>("create_terminal", {
+        id,
+        cols,
+        rows,
+        cwd,
+      });
+
+      // 4. Retrieve history and current total bytes read from backend
+      const historyInfo = await invoke<TerminalHistoryInfo>(
+        "get_terminal_history",
+        { id }
+      );
+      if (!disposed && historyInfo) {
+        term.write(historyInfo.history);
+        currentOffsetRef.current = historyInfo.total_read;
+
+        // Process buffered pending events in order
+        processPendingEvents(term, pendingEventsRef.current, currentOffsetRef);
+
+        pendingEventsRef.current = [];
+        isInitializedRef.current = true;
+      }
+
+      return { isTauriActive: true, isNew };
+    }
+
+    async function runTauriSetupWithRetries(
+      term: TerminalInstance
+    ): Promise<{ isTauriActive: boolean; isNew?: boolean }> {
+      let retries = 3;
+      while (retries > 0 && !disposed) {
+        try {
+          const res = await setupTauri(term);
+          if (res.isTauriActive) {
+            return res;
+          }
+          return { isTauriActive: false };
+        } catch {
+          retries--;
+          if (retries > 0 && !disposed) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      return { isTauriActive: false };
+    }
+
+    async function initializeShell(term: TerminalInstance) {
+      let res: { isTauriActive: boolean; isNew?: boolean } = {
+        isTauriActive: false,
+      };
+      try {
+        res = await runTauriSetupWithRetries(term);
+      } catch {
+        // ignore
+      }
+
+      if (res.isTauriActive) {
+        executeTauriAutoCommand(id, autoCommand, res.isNew, disposed, index);
+      } else if (!disposed) {
+        setupMockShell(term);
+        executeMockAutoCommand(term, autoCommand, directory, handleMockCommand);
+      }
+
+      if (!disposed) {
+        setIsTerminalReady(true);
+      }
     }
 
     async function init() {
@@ -295,21 +466,40 @@ export function TerminalPane({
       termRef.current = term;
       fitAddonRef.current = fitAddon;
 
-      // Handle fitting
+      // Handle fitting initially if visible
       requestAnimationFrame(() => {
-        if (!disposed) {
-          fitAddon.fit();
+        if (
+          !disposed &&
+          fitAddonRef.current &&
+          containerRef.current &&
+          containerRef.current.clientWidth > 0
+        ) {
+          fitAddonRef.current.fit();
         }
       });
 
       observer = new ResizeObserver(() => {
+        if (
+          !containerRef.current ||
+          containerRef.current.clientWidth === 0 ||
+          containerRef.current.clientHeight === 0
+        ) {
+          return; // Skip resize logic if container is hidden/0px
+        }
         requestAnimationFrame(() => {
-          if (!disposed && fitAddonRef.current) {
+          if (
+            !disposed &&
+            fitAddonRef.current &&
+            containerRef.current &&
+            containerRef.current.clientWidth > 0
+          ) {
             fitAddonRef.current.fit();
             if (termRef.current) {
               const cols = termRef.current.cols;
               const rows = termRef.current.rows;
-              resizePty(cols, rows);
+              if (cols > 0 && rows > 0) {
+                resizePty(cols, rows);
+              }
             }
           }
         });
@@ -319,21 +509,13 @@ export function TerminalPane({
         observer.observe(containerRef.current);
       }
 
-      try {
-        const isTauriActive = await setupTauri(term);
-        if (!isTauriActive) {
-          setupMockShell(term);
-        }
-      } catch {
-        setupMockShell(term);
-      } finally {
-        if (!disposed) {
-          setIsTerminalReady(true);
-        }
-      }
+      await initializeShell(term);
     }
 
     async function resizePty(cols: number, rows: number) {
+      if (cols <= 0 || rows <= 0) {
+        return;
+      }
       try {
         const { isTauri, invoke } = await import("@tauri-apps/api/core");
         if (isTauri()) {
@@ -355,37 +537,50 @@ export function TerminalPane({
       if (unlistenStdout) {
         unlistenStdout();
       }
-
-      // Close the PTY process in Rust backend to prevent process leakage
-      import("@tauri-apps/api/core")
-        .then(({ isTauri, invoke }) => {
-          if (isTauri()) {
-            invoke("close_terminal", { id }).catch(() => {
-              // ignore error
-            });
-          }
-        })
-        .catch(() => {
-          // ignore error
-        });
     };
-  }, [id, mounted, setupMockShell]);
+  }, [
+    id,
+    mounted,
+    setupMockShell,
+    cwd,
+    autoCommand,
+    directory,
+    handleMockCommand,
+    index,
+  ]);
 
   // Fit terminal when workspace becomes active to adapt to container layout
   useEffect(() => {
-    if (isActiveWorkspace && termRef.current && fitAddonRef.current) {
+    if (
+      isActiveWorkspace &&
+      termRef.current &&
+      fitAddonRef.current &&
+      containerRef.current &&
+      containerRef.current.clientWidth > 0
+    ) {
       const timer = setTimeout(() => {
-        if (fitAddonRef.current) {
+        if (
+          fitAddonRef.current &&
+          termRef.current &&
+          containerRef.current &&
+          containerRef.current.clientWidth > 0
+        ) {
           fitAddonRef.current.fit();
           const cols = termRef.current.cols;
           const rows = termRef.current.rows;
-          import("@tauri-apps/api/core").then(({ isTauri, invoke }) => {
-            if (isTauri()) {
-              invoke("resize_terminal", { id, cols, rows }).catch(() => {
-                // ignore resize errors on workspace switch
+          if (cols > 0 && rows > 0) {
+            import("@tauri-apps/api/core")
+              .then(({ isTauri, invoke }) => {
+                if (isTauri()) {
+                  invoke("resize_terminal", { id, cols, rows }).catch(() => {
+                    // ignore
+                  });
+                }
+              })
+              .catch(() => {
+                /* ignore */
               });
-            }
-          });
+          }
         }
       }, 80);
       return () => clearTimeout(timer);
@@ -410,25 +605,58 @@ export function TerminalPane({
   };
 
   const handleReset = async () => {
-    if (isTauriEnv) {
-      try {
-        const { invoke } = await import("@tauri-apps/api/core");
-        await invoke("close_terminal", { id });
-        if (termRef.current && fitAddonRef.current) {
-          termRef.current.clear();
-          const cols = termRef.current.cols;
-          const rows = termRef.current.rows;
-          await invoke("create_terminal", { id, cols, rows });
-        }
-      } catch {
-        // ignore
+    if (!isTauriEnv) {
+      if (termRef.current) {
+        termRef.current.clear();
+        termRef.current.writeln(
+          "\x1b[1;33mShell session reset successfully.\x1b[0m\r\n"
+        );
+        termRef.current.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
       }
-    } else if (termRef.current) {
-      termRef.current.clear();
-      termRef.current.writeln(
-        "\x1b[1;33mShell session reset successfully.\x1b[0m\r\n"
-      );
-      termRef.current.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
+      return;
+    }
+
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+
+      // Reset frontend tracking state for new session
+      isInitializedRef.current = false;
+      currentOffsetRef.current = 0;
+      pendingEventsRef.current = [];
+
+      await invoke("close_terminal", { id });
+
+      const term = termRef.current;
+      if (term && fitAddonRef.current) {
+        term.clear();
+        const cols = term.cols > 0 ? term.cols : 80;
+        const rows = term.rows > 0 ? term.rows : 24;
+        await invoke("create_terminal", { id, cols, rows, cwd });
+
+        const historyInfo = await invoke<TerminalHistoryInfo>(
+          "get_terminal_history",
+          { id }
+        );
+        if (historyInfo) {
+          term.write(historyInfo.history);
+          currentOffsetRef.current = historyInfo.total_read;
+
+          // Process any events that arrived during re-creation
+          processPendingEvents(
+            term,
+            pendingEventsRef.current,
+            currentOffsetRef
+          );
+
+          pendingEventsRef.current = [];
+          isInitializedRef.current = true;
+
+          // Trigger startup command on reset
+          executeTauriAutoCommand(id, autoCommand, true, false, index);
+        }
+      }
+    } catch {
+      // ignore
     }
   };
 

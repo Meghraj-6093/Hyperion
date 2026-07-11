@@ -9,10 +9,9 @@ export interface TerminalPane {
 }
 
 export interface Workspace {
-  aiModel?: string;
+  autoCommand?: string;
   createdAt: number;
   directory?: string;
-  gitEnabled?: boolean;
   id: string;
   isPinned?: boolean;
   name: string;
@@ -26,8 +25,7 @@ interface WorkspaceState {
     name: string,
     terminalCount: number,
     directory?: string,
-    gitEnabled?: boolean,
-    aiModel?: string
+    autoCommand?: string
   ) => Workspace;
   deleteWorkspace: (id: string) => void;
   renameWorkspace: (id: string, name: string) => void;
@@ -56,8 +54,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         name: string,
         terminalCount: number,
         directory?: string,
-        gitEnabled?: boolean,
-        aiModel?: string
+        autoCommand?: string
       ) => {
         const clamped = Math.min(8, Math.max(1, terminalCount));
         const workspace: Workspace = {
@@ -67,8 +64,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           terminalCount: clamped,
           panes: createPanes(clamped),
           directory,
-          gitEnabled,
-          aiModel,
+          autoCommand,
           isPinned: false,
         };
         set((state) => ({
@@ -79,6 +75,23 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
       deleteWorkspace: (id: string) => {
         set((state) => {
+          const workspace = state.workspaces.find((w) => w.id === id);
+          if (workspace) {
+            import("@tauri-apps/api/core")
+              .then(({ isTauri, invoke }) => {
+                if (isTauri()) {
+                  for (const pane of workspace.panes) {
+                    invoke("close_terminal", { id: pane.id }).catch(() => {
+                      /* ignore */
+                    });
+                  }
+                }
+              })
+              .catch(() => {
+                /* ignore */
+              });
+          }
+
           const remaining = state.workspaces.filter((w) => w.id !== id);
           return {
             activeWorkspaceId:
