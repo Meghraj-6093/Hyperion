@@ -1,0 +1,648 @@
+"use client";
+
+import {
+  type AgentMessage,
+  useAgentStore,
+} from "@workspace/core/stores/agent-store";
+import { useWorkspaceStore } from "@workspace/core/stores/workspace-store";
+import { Button } from "@workspace/ui/components/button";
+import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
+import { Textarea } from "@workspace/ui/components/textarea";
+import { cn } from "@workspace/ui/lib/utils";
+import {
+  Loader2,
+  Send,
+  Sparkles,
+  Square,
+  TerminalSquare,
+  User,
+  X,
+} from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+const MAX_ITERATIONS = 20;
+const MAX_HISTORY_CHARS = 2000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function buildSystemPrompt(panes: { id: string; title: string }[]): string {
+  const agentList = panes
+    .map((p, i) => `  - Agent ${i + 1}: id="${p.id}" (${p.title})`)
+    .join("\n");
+
+  return `You are the Hyperion Main Agent — an elite Senior AI Engineer who plans, delegates, monitors, and iterates until the job is done perfectly.
+
+## Your Terminal Agents
+You have ${panes.length} AI coding assistants (e.g. Claude Code) running in separate terminals:
+${agentList}
+
+## Your Tools
+1. prompt_agent(agent_id, prompt) — Type a natural-language instruction into a Terminal Agent's input. This ONLY types the text — it does NOT press Enter.
+2. send_prompt(agent_id) — Press Enter on the Terminal Agent to submit the typed prompt. You MUST call this after every prompt_agent call.
+3. observe_agent(agent_id) — Read the Terminal Agent's recent output to check progress.
+4. wait(seconds) — Pause for 1-30 seconds. ALWAYS wait 8-15 seconds after sending before observing.
+
+## Your Workflow (follow this STRICTLY for EVERY prompt)
+1. PLAN: Think step-by-step about the user's goal. Break it into concrete, independent sub-tasks.
+2. ASSIGN: For each agent:
+   a. Call prompt_agent(agent_id, "your instruction here") to type the prompt.
+   b. Call send_prompt(agent_id) to press Enter and submit it.
+3. WAIT: Call wait(10) to give the agent time to work.
+4. OBSERVE: Call observe_agent to read the agent's output.
+5. EVALUATE: Did they succeed? Is the output correct?
+6. ITERATE: If not perfect, send follow-up corrections using prompt_agent + send_prompt again.
+
+## Critical Rules
+- You are a PLANNER, not a shell. NEVER send bash commands like 'ls', 'cat', 'find', 'cd'. Your agents are AI assistants — talk to them in natural language.
+- Each prompt must be ONE LINE, under 200 characters. No newlines, no multi-line text.
+- ALWAYS call send_prompt() immediately after prompt_agent(). The prompt is NOT sent until you call send_prompt.
+- ALWAYS call wait() after send_prompt() before calling observe_agent().
+- If observe_agent returns unchanged output twice, the prompt may not have been received. Re-send it with prompt_agent + send_prompt.
+- If a simple question doesn't need terminal agents, just answer directly without using any tools.`;
+}
+
+const TOOLS_DEFINITION = [
+  {
+    type: "function" as const,
+    function: {
+      name: "prompt_agent",
+      description:
+        "Type a short, single-line natural language instruction into a Terminal Agent's input. This ONLY types the text — you MUST call send_prompt after this to actually submit it.",
+      parameters: {
+        type: "object",
+        properties: {
+          agent_id: {
+            type: "string",
+            description:
+              "The agent ID from the list, or 'all' to prompt every agent.",
+          },
+          prompt: {
+            type: "string",
+            description:
+              "A short, single-line natural language instruction (under 200 chars, no newlines).",
+          },
+        },
+        required: ["agent_id", "prompt"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "send_prompt",
+      description:
+        "Press Enter on a Terminal Agent to submit the previously typed prompt. MUST be called after every prompt_agent call.",
+      parameters: {
+        type: "object",
+        properties: {
+          agent_id: {
+            type: "string",
+            description:
+              "The agent ID to press Enter on, or 'all' to submit on all agents.",
+          },
+        },
+        required: ["agent_id"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "observe_agent",
+      description:
+        "Read the recent output of a Terminal Agent to check their progress and response.",
+      parameters: {
+        type: "object",
+        properties: {
+          agent_id: {
+            type: "string",
+            description: "The agent ID from the list.",
+          },
+        },
+        required: ["agent_id"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "wait",
+      description:
+        "Pause execution for a number of seconds. Use this after sending a prompt to give the agent time to process before observing.",
+      parameters: {
+        type: "object",
+        properties: {
+          seconds: {
+            type: "number",
+            description: "Number of seconds to wait (1-30).",
+          },
+        },
+        required: ["seconds"],
+      },
+    },
+  },
+];
+
+export function AgentSidebar() {
+  const {
+    isOpen,
+    toggleOpen,
+    messages,
+    addMessage,
+    apiKey,
+    baseUrl,
+    selectedModel,
+  } = useAgentStore();
+  const { activeWorkspaceId, workspaces } = useWorkspaceStore();
+
+  const [input, setInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [iterationCount, setIterationCount] = useState(0);
+  const [targetTerminalId, setTargetTerminalId] = useState<string>("all");
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+  const workspaceMessages = activeWorkspaceId
+    ? (messages[activeWorkspaceId] ?? [])
+    : [];
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [workspaceMessages.length]);
+
+  const handleSend = async () => {
+    if (!(input.trim() && activeWorkspaceId && activeWorkspace)) {
+      return;
+    }
+
+    if (!(apiKey && selectedModel)) {
+      toast.error("Please configure your AI Provider in Settings first.");
+      return;
+    }
+
+    const userMessage: AgentMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: input,
+      timestamp: Date.now(),
+    };
+
+    addMessage(activeWorkspaceId, userMessage);
+    setInput("");
+    setIsTyping(true);
+    setIterationCount(0);
+
+    try {
+      abortControllerRef.current = new AbortController();
+
+      const systemPrompt = buildSystemPrompt(activeWorkspace.panes);
+
+      const currentMessages: any[] = [
+        { role: "system", content: systemPrompt },
+        ...workspaceMessages.map((m) => ({
+          role: m.role === "agent" ? "assistant" : m.role,
+          content: m.content,
+        })),
+        { role: "user", content: userMessage.content },
+      ];
+
+      let isFinished = false;
+      const isTauri =
+        typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+      let finalAgentContent = "";
+      let iterations = 0;
+      const lastObservedOutput: Record<string, string> = {};
+
+      while (!isFinished && iterations < MAX_ITERATIONS) {
+        iterations++;
+        setIterationCount(iterations);
+
+        // Check if aborted
+        if (abortControllerRef.current?.signal.aborted) {
+          break;
+        }
+
+        const requestBody = {
+          model: selectedModel,
+          messages: currentMessages,
+          tools: TOOLS_DEFINITION,
+        };
+
+        let data;
+        if (isTauri) {
+          const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
+          const res = await tauriFetch(`${baseUrl}/chat/completions`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+            signal: abortControllerRef.current?.signal,
+          });
+          if (!res.ok) {
+            throw new Error(`API Error: ${res.status}`);
+          }
+          data = await res.json();
+        } else {
+          const res = await fetch("/api/proxy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: `${baseUrl}/chat/completions`,
+              method: "POST",
+              headers: { Authorization: `Bearer ${apiKey}` },
+              body: requestBody,
+            }),
+            signal: abortControllerRef.current?.signal,
+          });
+          if (!res.ok) {
+            throw new Error(`Proxy API Error: ${res.status}`);
+          }
+          data = await res.json();
+        }
+
+        const message = data.choices?.[0]?.message;
+        if (!message) {
+          throw new Error("No message returned from API.");
+        }
+
+        if (message.content) {
+          finalAgentContent +=
+            (finalAgentContent ? "\n" : "") + message.content;
+        }
+
+        if (message.tool_calls && message.tool_calls.length > 0) {
+          currentMessages.push(message);
+
+          if (isTauri) {
+            const { invoke } = await import("@tauri-apps/api/core");
+
+            for (const toolCall of message.tool_calls) {
+              const fnName = toolCall.function.name;
+              const args = JSON.parse(toolCall.function.arguments);
+
+              if (fnName === "prompt_agent") {
+                const agentId = args.agent_id;
+                const prompt = args.prompt;
+                const panesToRun =
+                  agentId === "all"
+                    ? activeWorkspace.panes
+                    : activeWorkspace.panes.filter((p) => p.id === agentId);
+
+                if (panesToRun.length === 0) {
+                  currentMessages.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: `Error: No agent found with id "${agentId}". Available agents: ${activeWorkspace.panes.map((p) => p.id).join(", ")}`,
+                  });
+                  continue;
+                }
+
+                // Clean: strip newlines, trim, cap length
+                const cleanPrompt = prompt
+                  .replace(/[\n\r]/g, " ")
+                  .trim()
+                  .slice(0, 500);
+
+                for (const pane of panesToRun) {
+                  await invoke("write_terminal", {
+                    id: pane.id,
+                    data: cleanPrompt,
+                  });
+                }
+
+                currentMessages.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: `Prompt typed into ${panesToRun.length} agent(s). Now call send_prompt() to press Enter and submit it.`,
+                });
+              } else if (fnName === "send_prompt") {
+                const agentId = args.agent_id;
+                const panesToSend =
+                  agentId === "all"
+                    ? activeWorkspace.panes
+                    : activeWorkspace.panes.filter((p) => p.id === agentId);
+
+                if (panesToSend.length === 0) {
+                  currentMessages.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: `Error: No agent found with id "${agentId}".`,
+                  });
+                  continue;
+                }
+
+                // Small delay to let the terminal process the typed text
+                await sleep(200);
+
+                for (const pane of panesToSend) {
+                  await invoke("write_terminal", {
+                    id: pane.id,
+                    data: "\r",
+                  });
+                }
+
+                currentMessages.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: `Enter pressed on ${panesToSend.length} agent(s). Prompt submitted. Now call wait(10) then observe_agent() to check the response.`,
+                });
+              } else if (fnName === "observe_agent") {
+                const agentId = args.agent_id;
+                try {
+                  const info: { history: string } = await invoke(
+                    "get_terminal_history",
+                    { id: agentId }
+                  );
+                  const rawOutput = info.history.trim();
+
+                  if (!rawOutput) {
+                    currentMessages.push({
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      content:
+                        "[Terminal output is empty. The agent may not have started yet. Try waiting longer.]",
+                    });
+                    continue;
+                  }
+
+                  // Truncate to last N chars to avoid context bloat
+                  const truncatedOutput = rawOutput.slice(-MAX_HISTORY_CHARS);
+
+                  // Stale-detection
+                  const lastOutput = lastObservedOutput[agentId] ?? "";
+                  if (truncatedOutput === lastOutput) {
+                    currentMessages.push({
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      content: `[Output unchanged since last observation. The agent may still be processing, or the prompt was not received. Try waiting longer with wait(15), or re-send the prompt with prompt_agent.]\n\nLast output:\n${truncatedOutput}`,
+                    });
+                  } else {
+                    lastObservedOutput[agentId] = truncatedOutput;
+                    currentMessages.push({
+                      role: "tool",
+                      tool_call_id: toolCall.id,
+                      content: truncatedOutput,
+                    });
+                  }
+                } catch (e: any) {
+                  currentMessages.push({
+                    role: "tool",
+                    tool_call_id: toolCall.id,
+                    content: `Error reading agent output: ${e.message || e}`,
+                  });
+                }
+              } else if (fnName === "wait") {
+                const seconds = Math.min(
+                  30,
+                  Math.max(1, Number(args.seconds) || 5)
+                );
+                await sleep(seconds * 1000);
+                currentMessages.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: `Waited ${seconds} seconds.`,
+                });
+              } else {
+                currentMessages.push({
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: `Unknown tool: ${fnName}`,
+                });
+              }
+            }
+          } else {
+            // Not in Tauri, simulate tool success
+            for (const toolCall of message.tool_calls) {
+              currentMessages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content:
+                  "Simulated tool execution (Native terminal tools not available in browser)",
+              });
+            }
+            isFinished = true;
+          }
+        } else {
+          isFinished = true;
+        }
+      }
+
+      if (iterations >= MAX_ITERATIONS) {
+        finalAgentContent +=
+          "\n\n⚠️ Reached maximum iteration limit (20). Stopping execution.";
+      }
+
+      if (finalAgentContent) {
+        const agentMessage: AgentMessage = {
+          id: crypto.randomUUID(),
+          role: "agent",
+          content: finalAgentContent,
+          timestamp: Date.now(),
+        };
+        addMessage(activeWorkspaceId, agentMessage);
+      }
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.log("Agent loop aborted by user");
+        toast.info("Agent execution stopped.");
+      } else {
+        console.error("Failed to execute agent prompt", error);
+        toast.error(error.message || "Failed to communicate with LLM");
+      }
+    } finally {
+      setIsTyping(false);
+      setIterationCount(0);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsTyping(false);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && activeWorkspace && (
+        <motion.div
+          animate={{ width: "400px", opacity: 1 }}
+          className="flex h-full shrink-0 flex-col overflow-hidden border-border/40 border-l bg-background/50 backdrop-blur-xl"
+          exit={{ width: 0, opacity: 0 }}
+          initial={{ width: 0, opacity: 0 }}
+          key="agent-sidebar"
+          transition={{ bounce: 0, duration: 0.3, type: "spring" }}
+        >
+          <div className="flex h-full w-[400px] flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex h-14 shrink-0 items-center justify-between border-border/40 border-b px-4">
+              <div className="flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Sparkles className="size-4 text-primary" />
+                </div>
+                <span className="font-semibold text-sm tracking-tight">
+                  Main Agent
+                </span>
+              </div>
+              <Button
+                className="size-7 rounded-lg hover:bg-muted"
+                onClick={() => toggleOpen()}
+                size="icon"
+                variant="ghost"
+              >
+                <X className="size-4 text-muted-foreground" />
+              </Button>
+            </div>
+
+            {/* Chat History */}
+            <ScrollArea className="min-h-0 flex-1" ref={scrollRef}>
+              <div className="flex flex-col gap-4 p-4">
+                {workspaceMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-2 pt-10 text-center text-muted-foreground">
+                    <Sparkles className="size-8 opacity-20" />
+                    <p className="text-sm">
+                      I'm your Main Agent.
+                      <br />
+                      Ask me to plan and execute tasks across your AI terminal
+                      agents.
+                    </p>
+                  </div>
+                ) : (
+                  workspaceMessages.map((msg) => (
+                    <div
+                      className={cn(
+                        "flex gap-3 text-sm",
+                        msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                      )}
+                      key={msg.id}
+                    >
+                      <div
+                        className={cn(
+                          "flex size-8 shrink-0 items-center justify-center rounded-lg border",
+                          msg.role === "user"
+                            ? "border-primary/20 bg-primary/10 text-primary"
+                            : "border-border/40 bg-muted text-foreground"
+                        )}
+                      >
+                        {msg.role === "user" ? (
+                          <User className="size-4" />
+                        ) : (
+                          <Sparkles className="size-4" />
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          "flex flex-col gap-1 rounded-2xl px-4 py-3",
+                          msg.role === "user"
+                            ? "rounded-tr-sm bg-primary text-primary-foreground"
+                            : "rounded-tl-sm border border-border/40 bg-muted/60 text-foreground"
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap leading-relaxed">
+                          {msg.content}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isTyping && (
+                  <div className="flex flex-row gap-3 text-sm">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted text-foreground">
+                      <Sparkles className="size-4" />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/40 bg-muted/60 px-4 py-3 text-foreground">
+                      <Loader2 className="size-4 animate-spin opacity-70" />
+                      <span className="text-xs opacity-70">
+                        {iterationCount > 0
+                          ? `Working... (step ${iterationCount}/${MAX_ITERATIONS})`
+                          : "Thinking..."}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Input Area */}
+            <div className="shrink-0 border-border/40 border-t bg-background/50 p-4 backdrop-blur-md">
+              <div className="flex flex-col gap-3 overflow-hidden rounded-xl border border-border/50 bg-background transition-all duration-200 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50">
+                <Textarea
+                  className="min-h-[80px] w-full resize-none border-0 bg-transparent p-3 text-sm shadow-none focus-visible:ring-0"
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Ask the Main Agent to plan and execute a task..."
+                  value={input}
+                />
+                <div className="flex items-center justify-between border-border/40 border-t bg-muted/20 px-3 py-2">
+                  <Select
+                    onValueChange={setTargetTerminalId}
+                    value={targetTerminalId}
+                  >
+                    <SelectTrigger className="h-7 w-[160px] border-border/40 bg-background text-xs shadow-none">
+                      <div className="flex items-center gap-1.5">
+                        <TerminalSquare className="size-3.5 opacity-70" />
+                        <SelectValue placeholder="Target Terminal" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Terminals</SelectItem>
+                      {activeWorkspace.panes.map((pane) => (
+                        <SelectItem key={pane.id} value={pane.id}>
+                          {pane.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    className="h-7 gap-1.5 rounded-lg px-3"
+                    disabled={!(input.trim() || isTyping)}
+                    onClick={() => (isTyping ? handleStop() : handleSend())}
+                    size="sm"
+                    variant={isTyping ? "destructive" : "default"}
+                  >
+                    {isTyping ? (
+                      <Square className="size-3.5 fill-current" />
+                    ) : (
+                      <Send className="size-3.5" />
+                    )}
+                    <span>{isTyping ? "Stop" : "Send"}</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}

@@ -3,6 +3,7 @@
 import { ModeCard } from "@workspace/core/components/common/mode-card";
 import { SidebarVariantCard } from "@workspace/core/components/common/sidebar-variant-card";
 import { ThemesList } from "@workspace/core/components/common/themes-list";
+import { AiProviderCard } from "@workspace/core/components/settings/ai-provider-card";
 import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 
 export function SettingsPage() {
@@ -14,6 +15,7 @@ export function SettingsPage() {
           <SidebarVariantCard />
         </div>
         <ThemesList />
+        <AiProviderCard />
       </div>
       <ScrollBar orientation="vertical" />
     </ScrollArea>

@@ -11,6 +11,7 @@
     "@clerk/clerk-react": "^5.61.3",
     "@tauri-apps/api": "^2.11.0",
     "@tauri-apps/plugin-dialog": "~2.2.0",
+    "@tauri-apps/plugin-http": "~2.5.9",
     "@workspace/i18n": "workspace:*",
     "@workspace/ui": "workspace:*",
     "lucide-react": "^0.577.0",

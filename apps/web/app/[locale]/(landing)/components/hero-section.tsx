@@ -406,7 +406,7 @@ export default function HeroSection() {
           {/* The parent owns the 3D scene: deep perspective, with
               preserve-3d carried down so the tilt renders inside it. */}
           <div
-            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-12 [perspective:2400px] sm:mr-0"
+            className="mask-b-from-55% relative -mt-10 -mr-56 overflow-hidden px-2 pb-12 [perspective:2400px] sm:mr-0"
             ref={shotRef}
           >
             {/* Suspended-object bob (±3px) on its own element so it

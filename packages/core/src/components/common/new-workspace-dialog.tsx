@@ -13,12 +13,7 @@ import {
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { cn } from "@workspace/ui/lib/utils";
-import {
-  FolderOpen,
-  History,
-  LayoutGrid,
-  Sparkles,
-} from "lucide-react";
+import { FolderOpen, History, LayoutGrid, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 
@@ -45,11 +40,7 @@ const SUGGESTIONS = [
   "C:\\Users\\hyperion\\dev\\python-agent",
 ];
 
-const PREDEFINED_COMMANDS = [
-  "codex running",
-  "claude code",
-  "keyking-claude",
-];
+const PREDEFINED_COMMANDS = ["codex running", "claude code", "keyking-claude"];
 
 function getGridClass(count: number): string {
   switch (count) {
@@ -189,7 +180,9 @@ function WorkspaceLivePreview({ count }: { count: number }) {
 }
 
 const getCommandLabel = (cmd: string) => {
-  if (!cmd) return "None";
+  if (!cmd) {
+    return "None";
+  }
   return cmd.length > 20 ? cmd.substring(0, 18) + "..." : cmd;
 };
 
@@ -417,7 +410,7 @@ export function NewWorkspaceDialog({
                 </Label>
                 <div className="flex w-full items-center gap-2 rounded-lg border border-border/40 bg-[#0b0b0d] px-2">
                   <Input
-                    className="h-8.5 flex-1 border-transparent bg-transparent p-0 text-xs text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-8.5 flex-1 border-transparent bg-transparent p-0 text-muted-foreground text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
                     onChange={(e) => setAutoCommand(e.target.value)}
                     placeholder="e.g. npm run dev"
                     value={autoCommand}
