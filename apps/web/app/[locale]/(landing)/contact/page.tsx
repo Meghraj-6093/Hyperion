@@ -2,6 +2,7 @@
 
 import { Mail, Sparkles, Terminal } from "lucide-react";
 import { motion } from "motion/react";
+import { ContactBackdrop } from "../components/contact-backdrop";
 import {
   Eyebrow,
   GlowCard,
@@ -33,7 +34,9 @@ const sidebarItems = [
 
 export default function ContactPage() {
   return (
-    <>
+    <div className="relative">
+      <ContactBackdrop />
+
       {/* Header */}
       <section className="relative mx-auto max-w-3xl px-6 pt-36 text-center">
         <div
@@ -143,6 +146,6 @@ export default function ContactPage() {
           </motion.div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
