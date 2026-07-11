@@ -312,27 +312,34 @@ const fieldShellClasses = (invalid?: boolean, valid?: boolean) =>
     valid && "border-[#8bbf93]/70"
   );
 
-/** Label that floats up + shrinks on focus/filled, animating over the
- *  field's own top edge — no layout shift, same visual slot as the
- *  original static label. */
+/** Notched floating label — sits centered inside the field like a
+ *  placeholder at rest, then on focus/filled lifts to straddle the
+ *  field's top border with a background patch behind it (so it reads
+ *  as a cut in the border, not overlapping text), Material/Linear
+ *  style. `top` is the rest-state vertical center as a CSS length
+ *  (differs between the fixed-height Input and the top-anchored
+ *  Textarea). */
 function FloatingLabel({
   htmlFor,
   children,
   floated,
+  top,
 }: {
   htmlFor: string;
   children: React.ReactNode;
   floated: boolean;
+  top: string;
 }) {
   return (
     <label
       className={cn(
-        "pointer-events-none absolute left-4 origin-left font-medium text-foreground/80 transition-[transform,color,font-size] duration-200 ease-out",
+        "pointer-events-none absolute left-3.5 origin-left whitespace-nowrap font-medium transition-[transform,color,top] duration-[220ms] ease-in-out",
         floated
-          ? "-translate-y-[1.55rem] text-primary/90 text-xs"
-          : "translate-y-0 text-sm peer-hover:text-foreground/90"
+          ? "-translate-y-1/2 rounded bg-background px-1 text-primary/90 text-[0.8125rem]"
+          : "-translate-y-1/2 text-foreground/80 text-sm peer-hover:text-foreground/90"
       )}
       htmlFor={htmlFor}
+      style={{ top: floated ? 0 : top }}
     >
       {children}
     </label>
@@ -416,7 +423,11 @@ export function Input({
           {...props}
         />
         {label && (
-          <FloatingLabel floated={focused || hasValue} htmlFor={fieldId}>
+          <FloatingLabel
+            floated={focused || hasValue}
+            htmlFor={fieldId}
+            top="50%"
+          >
             {label}
           </FloatingLabel>
         )}
@@ -486,7 +497,11 @@ export function Textarea({
           {...props}
         />
         {label && (
-          <FloatingLabel floated={focused || hasValue} htmlFor={fieldId}>
+          <FloatingLabel
+            floated={focused || hasValue}
+            htmlFor={fieldId}
+            top="1.375rem"
+          >
             {label}
           </FloatingLabel>
         )}
