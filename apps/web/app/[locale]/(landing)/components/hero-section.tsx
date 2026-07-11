@@ -9,35 +9,46 @@ import {
   ArrowRight,
   Bot,
   Check,
+  Github,
   LayoutGrid,
-  Play,
-  Rocket,
   SquareKanban,
   SquareTerminal,
+  Zap,
 } from "lucide-react";
 import {
   AnimatePresence,
   motion,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
 } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
+import { HeroBackdrop } from "./hero-backdrop";
 import { CodeBlock, CtaLink, Eyebrow, GlowCard } from "./marketing-kit";
 import { Counter, easeOut, Marquee } from "./motion-primitives";
 
 /* ── Copy ─────────────────────────────────────────────────── */
 
-/* Words from HEADLINE_HIGHLIGHT_FROM onward get the shimmer sweep —
-   the payoff phrase, what the swarm does for you. */
-const HEADLINE = ["You", "command.", "Agents", "build."];
-const HEADLINE_HIGHLIGHT_FROM = 2;
+/* Words from HEADLINE_HIGHLIGHT_FROM onward get the shimmer sweep. */
+const HEADLINE = ["Your", "AI", "Engineering", "Workspace"];
+const HEADLINE_HIGHLIGHT_FROM = 3;
 
 const SUBHEAD =
-  "Hyperion is the agentic workspace where a swarm of AI agents plans, codes, tests, and ships across dozens of terminals — turning one developer into an entire engineering team.";
+  "Hyperion orchestrates a swarm of AI agents that plan, code, test, and ship in parallel — dozens of terminals, one workspace, all under your command.";
+
+/* Quiet glass pills in place of CTA buttons — interactive-feeling,
+   not button-shaped. */
+const FEATURE_PILLS = [
+  { icon: Bot, label: "Multi-Agent" },
+  { icon: SquareTerminal, label: "Terminal Swarm" },
+  { icon: SquareKanban, label: "Parallel Tasks" },
+  { icon: Zap, label: "Real-Time Execution" },
+  { icon: Github, label: "Open Source" },
+];
 
 const TICKER_MESSAGES = [
   "agent-02 refactored auth middleware · just now",
@@ -71,28 +82,28 @@ const FEATURES = [
     title: "Workspace System",
     description:
       "Tile terminals, editors, and previews into one adaptive canvas.",
-    href: "/product",
+    href: "/features",
   },
   {
     icon: SquareTerminal,
     title: "Terminal Multiplexer",
     description:
       "Run and manage dozens of shells side by side without leaving the browser.",
-    href: "/coding",
+    href: "/features",
   },
   {
     icon: Bot,
     title: "AI Agent Swarm",
     description:
       "Delegate tasks to autonomous agents that work your codebase in parallel.",
-    href: "/coding",
+    href: "/features",
   },
   {
     icon: SquareKanban,
     title: "Task Board",
     description:
       "Every agent's task tracked on a live kanban you can reorder mid-flight.",
-    href: "/product",
+    href: "/features",
   },
 ];
 
@@ -132,7 +143,7 @@ function Word({
       className={cn(
         "inline-block will-change-transform",
         highlight &&
-          "landing-shimmer bg-gradient-to-r from-primary via-[#ffc199] to-primary bg-clip-text text-transparent"
+          "landing-shimmer bg-gradient-to-r from-primary via-muted-foreground to-primary bg-clip-text text-transparent"
       )}
       initial={
         reduceMotion ? false : { opacity: 0, y: 20, filter: "blur(12px)" }
@@ -262,8 +273,26 @@ export default function HeroSection() {
     target: shotRef,
     offset: ["start end", "start 0.35"],
   });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [14, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.94, 1]);
+  // One spring drives every derived value, so the showcase moves as a
+  // single weighty object — no linear interpolation anywhere.
+  const showcaseProgress = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 26,
+    mass: 1.1,
+  });
+  // Never fully flat: the tilt settles at 3.5°, so the panel keeps
+  // reading as a physical object floating in 3D space after the
+  // scroll animation completes.
+  const rotateX = useTransform(showcaseProgress, [0, 1], [17, 3.5]);
+  const scale = useTransform(showcaseProgress, [0, 1], [0.93, 1]);
+  const shotY = useTransform(showcaseProgress, [0, 1], [100, 0]);
+  // As the panel straightens, its shadow softens, spreads, and blurs —
+  // the object lifting further off the page.
+  const shotShadow = useTransform(
+    showcaseProgress,
+    [0, 1],
+    ["0 24px 48px rgba(0, 0, 0, 0.55)", "0 60px 120px rgba(0, 0, 0, 0.45)"]
+  );
 
   useEffect(() => {
     fetchLatestGithubVersion().then((tag) => {
@@ -275,42 +304,11 @@ export default function HeroSection() {
 
   return (
     <main className="overflow-hidden bg-background">
-      {/* ── Hero ── */}
-      <section className="relative">
-        {/* Breathing single-tone glow */}
-        <div
-          aria-hidden={true}
-          className="landing-glow-breathe pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px] [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_14%,transparent)_0%,transparent_70%)]"
-        />
-        {/* Faint blueprint grid, masked so it dissolves before content */}
-        <div
-          aria-hidden={true}
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[720px] opacity-[0.14] [background-size:44px_44px] [background:linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_62%_52%_at_50%_0%,#000_55%,transparent_100%)]"
-        />
-        {/* Drifting accent particles */}
-        <div
-          aria-hidden={true}
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[640px]"
-        >
-          {PARTICLES.map((p) => (
-            <span
-              className="landing-drift absolute rounded-full bg-primary/60"
-              key={`${p.left}-${p.top}`}
-              style={
-                {
-                  left: p.left,
-                  top: p.top,
-                  width: p.size,
-                  height: p.size,
-                  "--drift-dur": p.dur,
-                  "--drift-delay": p.delay,
-                  "--drift-x": p.x,
-                } as CSSProperties
-              }
-            />
-          ))}
-        </div>
-        <div className="relative z-10 w-full pt-24 pb-16 md:pt-28">
+      {/* ── Hero — GridScan holographic backdrop ── */}
+      <section className="relative flex min-h-[88svh] flex-col justify-center">
+        <HeroBackdrop />
+
+        <div className="relative z-10 w-full pt-24 pb-20 md:pt-28">
           <div className="mx-auto max-w-7xl px-6">
             <div className="text-center">
               {/* Announcement pill */}
@@ -344,8 +342,10 @@ export default function HeroSection() {
                 </Link>
               </motion.div>
 
-              {/* Headline — per-word blur reveal, shimmer sweep on the payoff phrase */}
-              <h1 className="mx-auto mt-8 max-w-4xl text-balance font-display text-5xl tracking-tight max-md:font-semibold md:text-7xl lg:mt-14 xl:text-[5.25rem]">
+              {/* Headline — per-word blur reveal, shimmer sweep on the payoff word.
+                  Deliberately one size class down from a typical hero — the
+                  content, not the type, should carry the section. */}
+              <h1 className="mx-auto mt-10 max-w-3xl text-balance font-display text-[2.75rem] leading-[1.08] tracking-tight max-md:font-semibold md:text-[3.75rem] lg:mt-12 lg:text-7xl xl:text-[5rem]">
                 {HEADLINE.map((word, i) => (
                   <Fragment key={word}>
                     <Word
@@ -360,34 +360,32 @@ export default function HeroSection() {
 
               <motion.p
                 animate={{ opacity: 1, y: 0 }}
-                className="mx-auto mt-8 max-w-3xl text-balance text-lg text-muted-foreground"
+                className="mx-auto mt-6 max-w-2xl text-balance text-lg text-muted-foreground leading-relaxed"
                 initial={reduceMotion ? false : { opacity: 0, y: 14 }}
                 transition={{ duration: 0.6, delay: 0.65, ease: easeOut }}
               >
                 {SUBHEAD}
               </motion.p>
 
-              {/* CTAs — magnetic pills with arrow slide-in */}
-              <motion.div
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-10 flex flex-col items-center justify-center gap-3 md:flex-row"
-                initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-                transition={{ duration: 0.6, delay: 0.8, ease: easeOut }}
-              >
-                <CtaLink className="group h-12 px-6 text-base" href="/home">
-                  <Play className="size-4" />
-                  View Web Demo
-                  <ArrowRight className="-ml-1 size-4 -translate-x-1 opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-100" />
-                </CtaLink>
-                <CtaLink
-                  className="group h-12 px-6 text-base"
-                  href="/docs/quick-start"
-                  variant="ghost"
-                >
-                  <Rocket className="size-4 transition-transform duration-300 ease-out group-hover:-rotate-12 group-hover:scale-110" />
-                  Start Building
-                </CtaLink>
-              </motion.div>
+              {/* Feature pills — quiet glass chips in place of CTA buttons */}
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-2.5">
+                {FEATURE_PILLS.map((pill, i) => (
+                  <motion.span
+                    animate={{ opacity: 1, y: 0 }}
+                    className="group/pill inline-flex cursor-default items-center gap-2 rounded-full border border-border/60 bg-card/40 px-3.5 py-1.5 text-muted-foreground text-xs backdrop-blur-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary/30 hover:text-foreground hover:shadow-[0_0_20px_-6px] hover:shadow-primary/25"
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    key={pill.label}
+                    transition={{
+                      duration: 0.45,
+                      delay: 0.8 + i * 0.07,
+                      ease: easeOut,
+                    }}
+                  >
+                    <pill.icon className="size-3.5 transition-colors duration-200 group-hover/pill:text-primary" />
+                    {pill.label}
+                  </motion.span>
+                ))}
+              </div>
 
               {/* Live swarm feed */}
               <motion.div
@@ -399,17 +397,30 @@ export default function HeroSection() {
               </motion.div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Screenshot — scroll-linked 3D untilt with orbiting border light */}
-          <Reveal direction="up" duration={450} offset={48}>
-            <div
-              className="mask-b-from-55% relative mt-10 -mr-56 overflow-hidden px-2 [perspective:1200px] sm:mt-14 sm:mr-0 md:mt-20"
-              ref={shotRef}
-            >
+      {/* ── Screenshot — spring-eased 3D showcase that never goes flat ── */}
+      <section className="relative">
+        <Reveal direction="up" duration={500} offset={0}>
+          {/* The parent owns the 3D scene: deep perspective, with
+              preserve-3d carried down so the tilt renders inside it. */}
+          <div
+            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-12 [perspective:2400px] sm:mr-0"
+            ref={shotRef}
+          >
+            {/* Suspended-object bob (±3px) on its own element so it
+                composes with the scroll transforms below. */}
+            <div className="landing-hover-bob [transform-style:preserve-3d]">
               <motion.div
-                className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-border bg-card/40 p-4 shadow-2xl shadow-black/40 will-change-transform"
-                style={{ rotateX, scale, transformPerspective: 1200 }}
+                className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-white/[0.07] bg-card/40 p-4 will-change-transform [transform-style:preserve-3d]"
+                style={{ rotateX, scale, y: shotY, boxShadow: shotShadow }}
               >
+                {/* light catching the upper edge */}
+                <div
+                  aria-hidden={true}
+                  className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                />
                 <Image
                   alt="Hyperion workspace screenshot"
                   className="relative aspect-15/8 rounded-2xl border border-border/50"
@@ -425,35 +436,6 @@ export default function HeroSection() {
                 />
               </motion.div>
             </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── Screenshot — scroll-linked 3D untilt with orbiting border light ── */}
-      <section className="relative">
-        <Reveal direction="up" duration={450} offset={48}>
-          <div
-            className="mask-b-from-55% relative -mt-10 -mr-56 overflow-hidden px-2 pb-4 [perspective:1200px] sm:mr-0"
-            ref={shotRef}
-          >
-            <motion.div
-              className="relative mx-auto max-w-6xl overflow-hidden rounded-2xl border border-border bg-card/40 p-4 shadow-2xl shadow-black/40 will-change-transform"
-              style={{ rotateX, scale, transformPerspective: 1200 }}
-            >
-              <Image
-                alt="Hyperion workspace screenshot"
-                className="relative aspect-15/8 rounded-2xl border border-border/50"
-                height="1080"
-                priority={true}
-                src="/app-screen-dark.png"
-                width="1920"
-              />
-              <BorderBeam
-                className="from-transparent via-primary to-transparent"
-                duration={6}
-                size={200}
-              />
-            </motion.div>
           </div>
         </Reveal>
       </section>
@@ -566,7 +548,7 @@ export default function HeroSection() {
             >
               <CtaLink
                 className="group mt-8 h-10 px-5"
-                href="/coding"
+                href="/features"
                 variant="ghost"
               >
                 See how agents work
@@ -590,7 +572,7 @@ export default function HeroSection() {
             </h2>
           </div>
         </Reveal>
-        <div className="mx-auto mt-10 max-w-2xl">
+        <div className="mx-auto mt-10 max-w-[1000px]">
           <CodeBlock
             code={TERMINAL_CODE}
             header="hyperion — swarm"

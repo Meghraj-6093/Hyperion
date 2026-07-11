@@ -3,10 +3,11 @@
 import { BorderBeam } from "@workspace/ui/components/landing/border-beam";
 import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
-import { Minus, Plus } from "lucide-react";
-import { motion, useInView, useScroll } from "motion/react";
+import { Check, Copy, Minus, Plus } from "lucide-react";
+import { motion, useReducedMotion, useScroll } from "motion/react";
 import type * as React from "react";
 import { useEffect, useRef, useState } from "react";
+import TextType from "./text-type";
 
 /* ─────────────────────────────────────────────────────────────
    Local dark marketing kit for the (landing) route group.
@@ -110,6 +111,108 @@ export function GlowCard({
         />
       )}
       <div className="relative">{children}</div>
+    </div>
+  );
+}
+
+/** Copy-to-clipboard icon button — flips to a check for 1.6s. */
+export function CopyButton({
+  className,
+  value,
+  ...props
+}: React.ComponentProps<"button"> & { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <button
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
+      className={cn(
+        "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-secondary/60 text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:text-foreground active:scale-90",
+        className
+      )}
+      data-slot="copy-button"
+      onClick={() => {
+        navigator.clipboard?.writeText(value).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        });
+      }}
+      type="button"
+      {...props}
+    >
+      {copied ? (
+        <Check className="size-3.5 text-primary" />
+      ) : (
+        <Copy className="size-3.5" />
+      )}
+    </button>
+  );
+}
+
+/** One-line command bar — `$ npx hyperion init` with a copy button. */
+export function CommandBar({
+  className,
+  command,
+  ...props
+}: React.ComponentProps<"div"> & { command: string }) {
+  return (
+    <div
+      className={cn(
+        "inline-flex max-w-full items-center gap-3 rounded-full border border-border bg-black/50 py-2 pr-2 pl-4 shadow-black/30 shadow-lg backdrop-blur-sm",
+        className
+      )}
+      data-slot="command-bar"
+      {...props}
+    >
+      <span aria-hidden={true} className="select-none text-primary/70">
+        $
+      </span>
+      <code className="overflow-x-auto whitespace-nowrap font-mono text-foreground/90 text-sm [scrollbar-width:none]">
+        {command}
+      </code>
+      <CopyButton value={command} />
+    </div>
+  );
+}
+
+/** Callout — docs note/tip/warning. Monochrome, differentiated by
+ *  weight rather than hue: tips get a platinum edge, warnings a
+ *  brighter left rule and title. */
+export function Callout({
+  className,
+  variant = "note",
+  title,
+  children,
+  ...props
+}: React.ComponentProps<"div"> & {
+  variant?: "note" | "tip" | "warning";
+  title?: string;
+}) {
+  const label =
+    title ?? (variant === "tip" ? "Tip" : variant === "warning" ? "Warning" : "Note");
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-border/60 border-l-2 bg-card/50 px-4 py-3",
+        variant === "warning" && "border-l-foreground/70",
+        variant === "tip" && "border-l-primary/60",
+        variant === "note" && "border-l-border",
+        className
+      )}
+      data-slot="callout"
+      {...props}
+    >
+      <p
+        className={cn(
+          "font-medium text-xs uppercase tracking-[0.14em]",
+          variant === "warning" ? "text-foreground" : "text-foreground/70"
+        )}
+      >
+        {label}
+      </p>
+      <div className="mt-1.5 text-muted-foreground text-sm leading-relaxed">
+        {children}
+      </div>
     </div>
   );
 }
@@ -308,9 +411,18 @@ export function FAQ({
 }
 
 /**
- * Dark terminal-style code block with traffic lights.
- * With `typing`, the code types itself when scrolled into view,
- * trailing a blinking block cursor. Respects prefers-reduced-motion.
+ * CodeBlock — the site's one shared terminal window.
+ *
+ * Fixed-size viewport, like a real terminal app (Warp/iTerm/VS Code):
+ * 360px tall on mobile, 440px on tablet, 500px on desktop, up to
+ * 1000px wide — the window NEVER grows with its content. Output fills
+ * the inside; anything past the viewport scrolls internally
+ * (overflow-y), and while `typing` plays the view stays pinned to the
+ * latest line, so the surrounding layout never shifts.
+ *
+ * Typing is driven by TextType (single pass, starts when scrolled
+ * into view) trailing the same blinking block cursor. Respects
+ * prefers-reduced-motion by rendering the full text statically.
  */
 export function CodeBlock({
   className,
@@ -327,42 +439,39 @@ export function CodeBlock({
   typing?: boolean;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(bodyRef, { once: true, margin: "-60px" });
-  const [chars, setChars] = useState(typing ? 0 : Number.MAX_SAFE_INTEGER);
+  const reduceMotion = useReducedMotion();
+  const showTyping = typing && !reduceMotion && !!code;
 
+  // Auto-scroll: while output is being typed, keep the viewport pinned
+  // to the newest line. A MutationObserver keeps this decoupled from
+  // the typing engine — any DOM growth inside the body re-pins.
   useEffect(() => {
-    if (!(typing && isInView && code)) {
+    const el = bodyRef.current;
+    if (!(el && showTyping)) {
       return;
     }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setChars(code.length);
-      return;
-    }
-    const id = setInterval(() => {
-      setChars((c) => {
-        if (c >= code.length) {
-          clearInterval(id);
-          return c;
-        }
-        return c + 2;
-      });
-    }, 14);
-    return () => clearInterval(id);
-  }, [typing, isInView, code]);
-
-  const done = !code || chars >= code.length;
+    const observer = new MutationObserver(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    });
+    return () => observer.disconnect();
+  }, [showTyping]);
 
   return (
     <Reveal direction="up" duration={350} offset={32}>
       <div
         className={cn(
-          "overflow-hidden rounded-xl border border-border bg-black/50 shadow-2xl shadow-black/40 backdrop-blur-sm",
+          "mx-auto flex h-[360px] w-full max-w-[1000px] flex-col overflow-hidden rounded-xl border border-border bg-black/50 shadow-2xl shadow-black/40 backdrop-blur-sm md:h-[440px] lg:h-[500px]",
           className
         )}
         data-slot="code-block"
         {...props}
       >
-        <div className="flex items-center gap-2 border-border border-b bg-muted/30 px-4 py-2.5">
+        <div className="flex shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-4 py-2.5">
           <span className="size-2.5 rounded-full bg-[#ff5f57]" />
           <span className="size-2.5 rounded-full bg-[#febc2e]" />
           <span className="size-2.5 rounded-full bg-[#28c840]" />
@@ -375,18 +484,30 @@ export function CodeBlock({
             {language}
           </span>
         </div>
-        <div className="overflow-x-auto p-4" ref={bodyRef}>
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden p-4 [overscroll-behavior:contain] [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin]"
+          ref={bodyRef}
+        >
           {children ?? (
-            <pre className="font-mono text-foreground/85 text-sm leading-relaxed">
-              <code>{typing ? code?.slice(0, chars) : code}</code>
-              {typing && (
-                <span
-                  aria-hidden={true}
-                  className={cn(
-                    "ml-0.5 inline-block h-4 w-2 translate-y-0.5 bg-primary/80",
-                    done && "animate-pulse"
-                  )}
+            <pre className="whitespace-pre-wrap break-words font-mono text-foreground/85 text-sm leading-relaxed">
+              {showTyping && code ? (
+                <TextType
+                  as="span"
+                  cursorCharacter={
+                    <span
+                      aria-hidden={true}
+                      className="inline-block h-4 w-2 translate-y-0.5 bg-primary/80"
+                    />
+                  }
+                  cursorClassName="ml-0.5"
+                  loop={false}
+                  showCursor={true}
+                  startOnVisible={true}
+                  text={code}
+                  typingSpeed={8}
                 />
+              ) : (
+                <code>{code}</code>
               )}
             </pre>
           )}
