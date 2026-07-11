@@ -1,5 +1,6 @@
 "use client";
 
+import { safeUUID } from "@workspace/core/lib/uuid";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
@@ -30,7 +31,7 @@ interface AgentState {
 }
 
 function generateId(): string {
-  return crypto.randomUUID();
+  return safeUUID();
 }
 
 export const useAgentStore = create<AgentState>()(
