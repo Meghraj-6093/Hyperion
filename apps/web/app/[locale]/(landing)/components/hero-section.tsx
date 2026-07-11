@@ -26,7 +26,6 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { HeroBackdrop } from "./hero-backdrop";
 import { CodeBlock, CtaLink, Eyebrow, GlowCard } from "./marketing-kit";
 import { Counter, easeOut, Marquee } from "./motion-primitives";
 
@@ -434,7 +433,7 @@ export default function HeroSection() {
       <section className="relative">
         <Reveal direction="up" duration={450} offset={48}>
           <div
-            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-4 [perspective:1200px] sm:mr-0"
+            className="mask-b-from-55% relative -mt-10 -mr-56 overflow-hidden px-2 pb-4 [perspective:1200px] sm:mr-0"
             ref={shotRef}
           >
             <motion.div

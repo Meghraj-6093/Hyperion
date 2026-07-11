@@ -79,6 +79,23 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
       deleteWorkspace: (id: string) => {
         set((state) => {
+          const workspace = state.workspaces.find((w) => w.id === id);
+          if (workspace) {
+            import("@tauri-apps/api/core")
+              .then(({ isTauri, invoke }) => {
+                if (isTauri()) {
+                  for (const pane of workspace.panes) {
+                    invoke("close_terminal", { id: pane.id }).catch(() => {
+                      /* ignore */
+                    });
+                  }
+                }
+              })
+              .catch(() => {
+                /* ignore */
+              });
+          }
+
           const remaining = state.workspaces.filter((w) => w.id !== id);
           return {
             activeWorkspaceId:

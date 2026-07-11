@@ -73,6 +73,7 @@ export function TerminalGrid() {
           >
             {ws.panes.map((pane, index) => (
               <TerminalPane
+                cwd={ws.directory}
                 id={pane.id}
                 isActiveWorkspace={isActive}
                 key={pane.id}
