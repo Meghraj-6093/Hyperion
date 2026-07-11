@@ -29,7 +29,6 @@ import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { HeroBackdrop } from "./hero-backdrop";
 import { CodeBlock, CtaLink, Eyebrow, GlowCard } from "./marketing-kit";
-import Shuffle from "@workspace/ui/components/marketing/shuffle";
 import ShinyText from "@workspace/ui/components/marketing/ShinyText";
 import { Counter, easeOut, Marquee } from "./motion-primitives";
 // Inline CountUp component defined below
@@ -414,22 +413,7 @@ export default function HeroSection() {
    {/* Remaining words before highlight */}
    <span>{` ${HEADLINE[2]}`}</span>
    <br />
-   {/* Animated "Workspace" word */}
-   <Shuffle
-     text={HEADLINE[HEADLINE_HIGHLIGHT_FROM]!}
-     className="inline-block"
-     shuffleDirection="right"
-     duration={0.9}
-     animationMode="evenodd"
-     shuffleTimes={1}
-     ease="expo.out"
-     stagger={0.03}
-     threshold={0.1}
-     triggerOnce={true}
-     triggerOnHover={true}
-     respectReducedMotion={true}
-     loop
-   />
+   <span>{HEADLINE[HEADLINE_HIGHLIGHT_FROM]}</span>
 </div>
 
               <motion.p

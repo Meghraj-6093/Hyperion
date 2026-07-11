@@ -11,6 +11,7 @@
     "clean": "rimraf .next .turbo .source"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@types/mdx": "^2.0.14",
     "@workspace/core": "workspace:*",
     "@workspace/i18n": "workspace:*",
