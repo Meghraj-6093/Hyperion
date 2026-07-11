@@ -4,7 +4,6 @@ import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { cn } from "@workspace/ui/lib/utils";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { DocsBackdrop } from "../components/docs-backdrop";
 import {
   Callout,
   CodeBlock,
@@ -13,6 +12,7 @@ import {
   Eyebrow,
   FAQ,
 } from "../components/marketing-kit";
+import { DocsBackdrop } from "../components/docs-backdrop";
 
 /* ── Section registry — drives the sidebar and scroll-spy ──── */
 
@@ -86,10 +86,7 @@ const pr = await run.result(); // → { url: "…/pull/219" }`;
 
 const commandRows = [
   { cmd: "hyperion init", desc: "Create a workspace in the current repo" },
-  {
-    cmd: "hyperion swarm start",
-    desc: "Attach agents and tile their terminals",
-  },
+  { cmd: "hyperion swarm start", desc: "Attach agents and tile their terminals" },
   { cmd: "hyperion task add <goal>", desc: "Plan a goal and dispatch it" },
   { cmd: "hyperion agents ls", desc: "List agents with live status" },
   { cmd: "hyperion attach <agent>", desc: "Take over an agent's terminal" },
@@ -124,11 +121,15 @@ const faqItems = [
 /* ── Local primitives ──────────────────────────────────────── */
 
 /** Minimal pill tabs — used for per-package-manager installs. */
-function Tabs({ tabs }: { tabs: { label: string; content: ReactNode }[] }) {
+function Tabs({
+  tabs,
+}: {
+  tabs: { label: string; content: ReactNode }[];
+}) {
   const [active, setActive] = useState(0);
   return (
     <div data-slot="docs-tabs">
-      <div className="flex w-fit gap-1 rounded-full border border-border/60 bg-card/50 p-1">
+      <div className="flex gap-1 rounded-full border border-border/60 bg-card/50 p-1 w-fit">
         {tabs.map((tab, i) => (
           <button
             className={cn(
@@ -271,9 +272,7 @@ export default function DocsPage() {
               tabs={[
                 {
                   label: "npm",
-                  content: (
-                    <CommandBar command="npm install -g @hyperion/cli" />
-                  ),
+                  content: <CommandBar command="npm install -g @hyperion/cli" />,
                 },
                 {
                   label: "pnpm",
@@ -286,8 +285,8 @@ export default function DocsPage() {
               ]}
             />
             <Callout variant="tip">
-              Prefer the desktop app? Grab a signed build for Windows, macOS, or
-              Linux on the download page — the CLI is bundled.
+              Prefer the desktop app? Grab a signed build for Windows, macOS,
+              or Linux on the download page — the CLI is bundled.
             </Callout>
           </DocSection>
 
@@ -305,8 +304,8 @@ export default function DocsPage() {
 
           <DocSection id="cli" title="CLI">
             <p>
-              The <code>hyperion</code> binary is the front door to everything —
-              workspaces, agents, tasks, and the board all have first-class
+              The <code>hyperion</code> binary is the front door to everything
+              — workspaces, agents, tasks, and the board all have first-class
               commands. Every command supports <code>--json</code> for
               scripting.
             </p>
@@ -351,18 +350,14 @@ export default function DocsPage() {
 
           <DocSection id="configuration" title="Configuration">
             <p>
-              Everything is configured from a single typed file at the workspace
-              root:
+              Everything is configured from a single typed file at the
+              workspace root:
             </p>
-            <CodeBlock
-              code={CONFIG_CODE}
-              header="hyperion.config.ts"
-              language="typescript"
-            />
+            <CodeBlock code={CONFIG_CODE} header="hyperion.config.ts" language="typescript" />
             <Callout variant="warning">
               Raising <code>agents.max</code> above your machine's core count
-              will slow the swarm down, not speed it up — agents are CPU-bound
-              while running your tests.
+              will slow the swarm down, not speed it up — agents are
+              CPU-bound while running your tests.
             </Callout>
           </DocSection>
 
@@ -383,9 +378,9 @@ export default function DocsPage() {
 
           <DocSection id="workspaces" title="Workspaces">
             <p>
-              A workspace tiles terminals, editors, previews, and the board into
-              one adaptive canvas. Layouts are saved per-project and restore
-              exactly — pane sizes, scroll positions, running shells.
+              A workspace tiles terminals, editors, previews, and the board
+              into one adaptive canvas. Layouts are saved per-project and
+              restore exactly — pane sizes, scroll positions, running shells.
             </p>
           </DocSection>
 
@@ -404,22 +399,16 @@ export default function DocsPage() {
 
           <DocSection id="api" title="API">
             <p>
-              Everything the CLI does is available programmatically through the
-              SDK:
+              Everything the CLI does is available programmatically through
+              the SDK:
             </p>
-            <CodeBlock
-              code={API_CODE}
-              header="swarm.ts"
-              language="typescript"
-            />
+            <CodeBlock code={API_CODE} header="swarm.ts" language="typescript" />
           </DocSection>
 
           <DocSection id="examples" title="Examples">
             <p>Common one-liners to steal:</p>
             <div className="flex flex-col items-start gap-3">
-              <CommandBar
-                command={'hyperion task add "upgrade to react 19" --agents 2'}
-              />
+              <CommandBar command={'hyperion task add "upgrade to react 19" --agents 2'} />
               <CommandBar command="hyperion swarm start --agents 4 --model claude-fable-5" />
               <CommandBar command="hyperion logs 04 --follow" />
             </div>

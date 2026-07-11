@@ -191,24 +191,24 @@ void main() {
 `;
 
 interface GalaxyProps {
-  autoCenterRepulsion?: number;
-  className?: string;
-  density?: number;
-  disableAnimation?: boolean;
   focal?: [number, number];
-  glowIntensity?: number;
-  hueShift?: number;
-  mouseInteraction?: boolean;
-  mouseRepulsion?: boolean;
-  repulsionStrength?: number;
   rotation?: [number, number];
-  rotationSpeed?: number;
-  saturation?: number;
-  speed?: number;
   starSpeed?: number;
-  style?: CSSProperties;
-  transparent?: boolean;
+  density?: number;
+  hueShift?: number;
+  disableAnimation?: boolean;
+  speed?: number;
+  mouseInteraction?: boolean;
+  glowIntensity?: number;
+  saturation?: number;
+  mouseRepulsion?: boolean;
   twinkleIntensity?: number;
+  rotationSpeed?: number;
+  repulsionStrength?: number;
+  autoCenterRepulsion?: number;
+  transparent?: boolean;
+  className?: string;
+  style?: CSSProperties;
 }
 
 export default function Galaxy({

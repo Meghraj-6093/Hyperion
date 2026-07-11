@@ -1,5 +1,6 @@
 "use client";
 
+import { useThemeTransition } from "@workspace/core/hooks/use-theme-transition";
 import { use, useEffect, useId, useState } from "react";
 
 export function Mermaid({ chart }: { chart: string }) {
@@ -33,7 +34,7 @@ function cachePromise<T>(
 
 function MermaidContent({ chart }: { chart: string }) {
   const id = useId();
-  const resolvedTheme = "dark";
+  const { resolvedTheme } = useThemeTransition();
 
   // Asynchronously load mermaid to prevent SSR issues and reduce bundle size
   const { default: mermaid } = use(

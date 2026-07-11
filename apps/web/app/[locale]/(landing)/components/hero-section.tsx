@@ -320,36 +320,6 @@ function SwarmOrbit() {
   );
 }
 
-const PARTICLES = [
-  { left: "10%", top: "15%", size: "4px", dur: "14s", delay: "0s", x: "20px" },
-  {
-    left: "30%",
-    top: "25%",
-    size: "6px",
-    dur: "18s",
-    delay: "-2s",
-    x: "-30px",
-  },
-  { left: "55%", top: "45%", size: "3px", dur: "12s", delay: "-4s", x: "15px" },
-  {
-    left: "75%",
-    top: "20%",
-    size: "5px",
-    dur: "16s",
-    delay: "-1s",
-    x: "-25px",
-  },
-  { left: "85%", top: "60%", size: "4px", dur: "15s", delay: "-5s", x: "20px" },
-  {
-    left: "20%",
-    top: "75%",
-    size: "5px",
-    dur: "17s",
-    delay: "-3s",
-    x: "-15px",
-  },
-];
-
 /* ── Page ─────────────────────────────────────────────────── */
 
 export default function HeroSection() {
@@ -510,7 +480,7 @@ export default function HeroSection() {
           {/* The parent owns the 3D scene: deep perspective, with
               preserve-3d carried down so the tilt renders inside it. */}
           <div
-            className="mask-b-from-55% relative -mt-10 -mr-56 overflow-hidden px-2 pb-12 [perspective:2400px] sm:mr-0"
+            className="mask-b-from-55% -mr-56 -mt-10 relative overflow-hidden px-2 pb-12 [perspective:2400px] sm:mr-0"
             ref={shotRef}
           >
             {/* Suspended-object bob (±3px) on its own element so it

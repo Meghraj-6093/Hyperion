@@ -18,16 +18,16 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import {
+  revealVariants,
+  staggerContainer,
+} from "../components/motion-primitives";
+import {
   Badge,
   CodeBlock,
   CtaLink,
   Eyebrow,
   GlowCard,
 } from "../components/marketing-kit";
-import {
-  revealVariants,
-  staggerContainer,
-} from "../components/motion-primitives";
 import { ParallaxField } from "../components/parallax-field";
 
 /* ── Feature grid — every capability, one card each ───────── */
@@ -175,7 +175,7 @@ export default function FeaturesPage() {
               <GlowCard beam={pillar.beam} className="flex h-full flex-col p-8">
                 <Badge className="w-fit">{pillar.tag}</Badge>
                 <div className="mt-6 flex size-12 items-center justify-center rounded-xl border border-border bg-secondary transition-colors duration-300 group-hover/card:border-primary/40">
-                  <pillar.icon className="size-6 text-primary transition-transform duration-300 ease-out group-hover/card:-rotate-3 group-hover/card:scale-110" />
+                  <pillar.icon className="group-hover/card:-rotate-3 size-6 text-primary transition-transform duration-300 ease-out group-hover/card:scale-110" />
                 </div>
                 <h2 className="mt-5 font-display font-semibold text-2xl tracking-tight">
                   {pillar.title}
@@ -201,15 +201,10 @@ export default function FeaturesPage() {
         </Reveal>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, i) => (
-            <Reveal
-              direction="up"
-              duration={280}
-              index={i % 3}
-              key={feature.title}
-            >
+            <Reveal direction="up" duration={280} index={i % 3} key={feature.title}>
               <GlowCard className="h-full p-6">
                 <div className="flex size-11 items-center justify-center rounded-xl border border-border bg-secondary transition-colors duration-300 group-hover/card:border-primary/40">
-                  <feature.icon className="size-5 text-primary transition-transform duration-300 ease-out group-hover/card:-rotate-3 group-hover/card:scale-110" />
+                  <feature.icon className="group-hover/card:-rotate-3 size-5 text-primary transition-transform duration-300 ease-out group-hover/card:scale-110" />
                 </div>
                 <h3 className="mt-4 font-medium text-foreground">
                   {feature.title}

@@ -189,8 +189,7 @@ export function Callout({
   title?: string;
 }) {
   const label =
-    title ??
-    (variant === "tip" ? "Tip" : variant === "warning" ? "Warning" : "Note");
+    title ?? (variant === "tip" ? "Tip" : variant === "warning" ? "Warning" : "Note");
   return (
     <div
       className={cn(
