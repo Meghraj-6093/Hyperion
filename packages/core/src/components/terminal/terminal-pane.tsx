@@ -7,13 +7,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface TerminalPaneProps {
-<<<<<<< HEAD
-  cwd?: string;
-=======
   autoCommand?: string;
+  cwd?: string;
   directory?: string;
->>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
   id: string;
+  index?: number;
   isActiveWorkspace?: boolean;
   title: string;
 }
@@ -95,6 +93,48 @@ function processPendingEvents(
   }
 }
 
+// Helper to execute startup autoCommand on Tauri environment (staggered delay based on index)
+function executeTauriAutoCommand(
+  id: string,
+  autoCommand: string | undefined,
+  isNew: boolean | undefined,
+  disposed: boolean,
+  index?: number
+) {
+  if (isNew && autoCommand) {
+    const lineEnding = navigator.userAgent.includes("Windows") ? "\r" : "\r\n";
+    const delay = 400 + (index ?? 0) * 150;
+    setTimeout(async () => {
+      if (!disposed) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        invoke("write_terminal", {
+          id,
+          data: `${autoCommand}${lineEnding}`,
+        }).catch(() => {
+          /* ignore */
+        });
+      }
+    }, delay);
+  }
+}
+
+// Helper to execute startup autoCommand on Mock environment
+function executeMockAutoCommand(
+  term: TerminalInstance,
+  autoCommand: string | undefined,
+  directory: string | undefined,
+  handleMockCommand: (cmd: string, term: TerminalInstance) => void
+) {
+  if (autoCommand) {
+    if (directory) {
+      term.write(`cd "${directory}"\r\n`);
+    }
+    term.write(`${autoCommand}\r\n`);
+    handleMockCommand(autoCommand, term);
+    term.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
+  }
+}
+
 function TerminalPlaceholder({ shellType }: { shellType: string }) {
   const isWin =
     shellType.toLowerCase().includes("cmd") ||
@@ -129,12 +169,13 @@ function TerminalPlaceholder({ shellType }: { shellType: string }) {
 }
 
 export function TerminalPane({
-  autoCommand,
-  directory,
   id,
   title,
   isActiveWorkspace = true,
   cwd,
+  autoCommand,
+  directory,
+  index = 0,
 }: TerminalPaneProps) {
   const mounted = useMounted();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -143,7 +184,6 @@ export function TerminalPane({
   const [shellType, setShellType] = useState("Local Shell");
   const [isTauriEnv, setIsTauriEnv] = useState(false);
   const [isTerminalReady, setIsTerminalReady] = useState(false);
-  const autoCommandRunRef = useRef(false);
 
   // Buffer input for mock shell
   const inputBufferRef = useRef("");
@@ -285,7 +325,7 @@ export function TerminalPane({
       const { listen } = await import("@tauri-apps/api/event");
 
       if (!isTauri() || disposed) {
-        return false;
+        return { isTauriActive: false };
       }
 
       // 1. Listen for stdout events first to avoid race conditions and lost bytes
@@ -316,7 +356,12 @@ export function TerminalPane({
       // 3. Spawns/attaches backend session
       const cols = term.cols > 0 ? term.cols : 80;
       const rows = term.rows > 0 ? term.rows : 24;
-      await invoke("create_terminal", { id, cols, rows, cwd });
+      const isNew = await invoke<boolean>("create_terminal", {
+        id,
+        cols,
+        rows,
+        cwd,
+      });
 
       // 4. Retrieve history and current total bytes read from backend
       const historyInfo = await invoke<TerminalHistoryInfo>(
@@ -334,20 +379,20 @@ export function TerminalPane({
         isInitializedRef.current = true;
       }
 
-      return true;
+      return { isTauriActive: true, isNew };
     }
 
     async function runTauriSetupWithRetries(
       term: TerminalInstance
-    ): Promise<boolean> {
+    ): Promise<{ isTauriActive: boolean; isNew?: boolean }> {
       let retries = 3;
       while (retries > 0 && !disposed) {
         try {
-          const isTauriActive = await setupTauri(term);
-          if (isTauriActive) {
-            return true;
+          const res = await setupTauri(term);
+          if (res.isTauriActive) {
+            return res;
           }
-          return false;
+          return { isTauriActive: false };
         } catch {
           retries--;
           if (retries > 0 && !disposed) {
@@ -355,20 +400,26 @@ export function TerminalPane({
           }
         }
       }
-      return false;
+      return { isTauriActive: false };
     }
 
     async function initializeShell(term: TerminalInstance) {
-      let success = false;
+      let res: { isTauriActive: boolean; isNew?: boolean } = {
+        isTauriActive: false,
+      };
       try {
-        success = await runTauriSetupWithRetries(term);
+        res = await runTauriSetupWithRetries(term);
       } catch {
         // ignore
       }
 
-      if (!(success || disposed)) {
+      if (res.isTauriActive) {
+        executeTauriAutoCommand(id, autoCommand, res.isNew, disposed, index);
+      } else if (!disposed) {
         setupMockShell(term);
+        executeMockAutoCommand(term, autoCommand, directory, handleMockCommand);
       }
+
       if (!disposed) {
         setIsTerminalReady(true);
       }
@@ -458,54 +509,7 @@ export function TerminalPane({
         observer.observe(containerRef.current);
       }
 
-<<<<<<< HEAD
       await initializeShell(term);
-=======
-      try {
-        const isTauriActive = await setupTauri(term);
-        if (!isTauriActive) {
-          setupMockShell(term);
-        }
-
-        if (autoCommand && !disposed && !autoCommandRunRef.current) {
-          autoCommandRunRef.current = true;
-          setTimeout(async () => {
-            if (disposed) return;
-            if (isTauriActive) {
-              try {
-                const { invoke } = await import("@tauri-apps/api/core");
-                const lineEnding = navigator.userAgent.includes("Windows") ? "\r" : "\r\n";
-                if (directory) {
-                  const cdCmd = navigator.userAgent.includes("Windows") ? `cd /d "${directory}"` : `cd "${directory}"`;
-                  await invoke("write_terminal", { id, data: cdCmd + lineEnding });
-                  setTimeout(async () => {
-                    if (disposed) return;
-                    await invoke("write_terminal", { id, data: autoCommand + lineEnding });
-                  }, 150);
-                } else {
-                  await invoke("write_terminal", { id, data: autoCommand + lineEnding });
-                }
-              } catch {
-                // ignore
-              }
-            } else {
-              if (directory) {
-                term.write(`cd "${directory}"\r\n`);
-              }
-              term.write(autoCommand + "\r\n");
-              handleMockCommand(autoCommand, term);
-              term.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
-            }
-          }, 400);
-        }
-      } catch {
-        setupMockShell(term);
-      } finally {
-        if (!disposed) {
-          setIsTerminalReady(true);
-        }
-      }
->>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
     }
 
     async function resizePty(cols: number, rows: number) {
@@ -533,10 +537,17 @@ export function TerminalPane({
       if (unlistenStdout) {
         unlistenStdout();
       }
-      // Note: We do NOT close the PTY session in Rust backend here.
-      // Sessions survive workspace navigation and refreshes.
     };
-  }, [id, mounted, setupMockShell, cwd]);
+  }, [
+    id,
+    mounted,
+    setupMockShell,
+    cwd,
+    autoCommand,
+    directory,
+    handleMockCommand,
+    index,
+  ]);
 
   // Fit terminal when workspace becomes active to adapt to container layout
   useEffect(() => {
@@ -639,6 +650,9 @@ export function TerminalPane({
 
           pendingEventsRef.current = [];
           isInitializedRef.current = true;
+
+          // Trigger startup command on reset
+          executeTauriAutoCommand(id, autoCommand, true, false, index);
         }
       }
     } catch {
