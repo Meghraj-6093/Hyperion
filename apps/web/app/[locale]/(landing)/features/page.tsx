@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { FeaturesBackdrop } from "../components/features-backdrop";
 import { Badge, CtaLink, Eyebrow, GlowCard } from "../components/marketing-kit";
 import {
   revealVariants,
@@ -147,9 +148,10 @@ export default function FeaturesPage() {
   return (
     <div className="relative">
       <ParallaxField />
+      <FeaturesBackdrop />
 
       {/* Hero */}
-      <section className="relative pt-36 pb-12">
+      <section className="relative z-10 pt-36 pb-12">
         <motion.div
           animate="visible"
           className="relative mx-auto max-w-3xl px-6 text-center"

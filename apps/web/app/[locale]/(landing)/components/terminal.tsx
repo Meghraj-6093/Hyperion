@@ -95,7 +95,7 @@ export function TerminalContent({
   return (
     <div
       className={cn(
-        "landing-terminal-scroll flex-1 overflow-y-auto p-4",
+        "landing-terminal-scroll flex-1 overflow-x-hidden overflow-y-auto p-4",
         className
       )}
       ref={bodyRef}
@@ -246,6 +246,7 @@ export function Terminal({
   ...props
 }: TerminalProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const pinnedRef = useRef(true);
   const reduceMotion = useReducedMotion();
   const animate = typing && !reduceMotion;
 
@@ -262,14 +263,18 @@ export function Terminal({
     });
   }, [lines]);
 
-  // Programmatic scroll: keep pinned to the newest line while output grows
+  // Auto-scroll: keep pinned to the newest line while output grows, but
+  // only while the visitor hasn't manually scrolled up — pinnedRef is
+  // the source of truth, flipped by the body's own onScroll below.
   useEffect(() => {
     const el = bodyRef.current;
     if (!(el && animate)) {
       return;
     }
     const observer = new MutationObserver(() => {
-      el.scrollTop = el.scrollHeight;
+      if (pinnedRef.current) {
+        el.scrollTop = el.scrollHeight;
+      }
     });
     observer.observe(el, {
       childList: true,
@@ -287,7 +292,14 @@ export function Terminal({
         {...props}
       >
         <TerminalHeader shell={shell} title={title} />
-        <TerminalContent bodyRef={bodyRef}>
+        <TerminalContent
+          bodyRef={bodyRef}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            pinnedRef.current =
+              el.scrollHeight - el.scrollTop - el.clientHeight < 32;
+          }}
+        >
           {children ??
             (lines ? (
               <div

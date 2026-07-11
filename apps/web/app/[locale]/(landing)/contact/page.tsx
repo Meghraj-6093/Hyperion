@@ -46,7 +46,6 @@ export default function ContactPage() {
           variants={staggerContainer}
         >
           <motion.div variants={revealVariants}>
-            <Eyebrow>Contact</Eyebrow>
           </motion.div>
           <motion.h1
             className="mt-3 font-display text-4xl text-foreground tracking-tighter md:text-6xl"
