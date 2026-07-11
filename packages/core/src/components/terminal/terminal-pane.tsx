@@ -7,7 +7,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface TerminalPaneProps {
+<<<<<<< HEAD
   cwd?: string;
+=======
+  autoCommand?: string;
+  directory?: string;
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
   id: string;
   isActiveWorkspace?: boolean;
   title: string;
@@ -124,6 +129,8 @@ function TerminalPlaceholder({ shellType }: { shellType: string }) {
 }
 
 export function TerminalPane({
+  autoCommand,
+  directory,
   id,
   title,
   isActiveWorkspace = true,
@@ -136,6 +143,7 @@ export function TerminalPane({
   const [shellType, setShellType] = useState("Local Shell");
   const [isTauriEnv, setIsTauriEnv] = useState(false);
   const [isTerminalReady, setIsTerminalReady] = useState(false);
+  const autoCommandRunRef = useRef(false);
 
   // Buffer input for mock shell
   const inputBufferRef = useRef("");
@@ -450,7 +458,54 @@ export function TerminalPane({
         observer.observe(containerRef.current);
       }
 
+<<<<<<< HEAD
       await initializeShell(term);
+=======
+      try {
+        const isTauriActive = await setupTauri(term);
+        if (!isTauriActive) {
+          setupMockShell(term);
+        }
+
+        if (autoCommand && !disposed && !autoCommandRunRef.current) {
+          autoCommandRunRef.current = true;
+          setTimeout(async () => {
+            if (disposed) return;
+            if (isTauriActive) {
+              try {
+                const { invoke } = await import("@tauri-apps/api/core");
+                const lineEnding = navigator.userAgent.includes("Windows") ? "\r" : "\r\n";
+                if (directory) {
+                  const cdCmd = navigator.userAgent.includes("Windows") ? `cd /d "${directory}"` : `cd "${directory}"`;
+                  await invoke("write_terminal", { id, data: cdCmd + lineEnding });
+                  setTimeout(async () => {
+                    if (disposed) return;
+                    await invoke("write_terminal", { id, data: autoCommand + lineEnding });
+                  }, 150);
+                } else {
+                  await invoke("write_terminal", { id, data: autoCommand + lineEnding });
+                }
+              } catch {
+                // ignore
+              }
+            } else {
+              if (directory) {
+                term.write(`cd "${directory}"\r\n`);
+              }
+              term.write(autoCommand + "\r\n");
+              handleMockCommand(autoCommand, term);
+              term.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
+            }
+          }, 400);
+        }
+      } catch {
+        setupMockShell(term);
+      } finally {
+        if (!disposed) {
+          setIsTerminalReady(true);
+        }
+      }
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
     }
 
     async function resizePty(cols: number, rows: number) {

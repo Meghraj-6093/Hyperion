@@ -1,8 +1,9 @@
-use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem, MasterPty};
+use portable_pty::{CommandBuilder, MasterPty, NativePtySystem, PtySize, PtySystem};
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
+<<<<<<< HEAD
 use tauri::{Emitter, Runtime};
 
 pub struct TerminalHistory {
@@ -15,6 +16,15 @@ pub struct TerminalSession {
     master: Arc<Mutex<Box<dyn MasterPty + Send>>>,
     history: Arc<Mutex<TerminalHistory>>,
     child: Arc<Mutex<Box<dyn portable_pty::Child + Send>>>,
+=======
+use tauri::{Emitter, Runtime, Window};
+
+pub struct TerminalSession {
+  writer: Arc<Mutex<Box<dyn Write + Send>>>,
+  master: Arc<Mutex<Box<dyn MasterPty + Send>>>,
+  history: Arc<Mutex<Vec<u8>>>,
+  child: Arc<Mutex<Box<dyn portable_pty::Child + Send>>>,
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
 }
 
 impl Drop for TerminalSession {
@@ -28,8 +38,8 @@ impl Drop for TerminalSession {
 type SessionMap = Arc<Mutex<HashMap<String, TerminalSession>>>;
 
 fn sessions() -> &'static SessionMap {
-    static SESSIONS: OnceLock<SessionMap> = OnceLock::new();
-    SESSIONS.get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
+  static SESSIONS: OnceLock<SessionMap> = OnceLock::new();
+  SESSIONS.get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
 }
 
 const MAX_HISTORY_BYTES: usize = 100_000;
@@ -48,6 +58,7 @@ pub struct TerminalHistoryInfo {
 
 #[tauri::command]
 pub fn create_terminal<R: Runtime>(
+<<<<<<< HEAD
     app: tauri::AppHandle<R>,
     id: String,
     cols: u16,
@@ -78,18 +89,41 @@ pub fn create_terminal<R: Runtime>(
             }
         }
         return Ok(());
+=======
+  window: Window<R>,
+  id: String,
+  cols: u16,
+  rows: u16,
+) -> Result<(), String> {
+  let mut sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
+
+  if sessions_guard.contains_key(&id) {
+    // Re-use existing session, just trigger a resize to be sure
+    if let Some(session) = sessions_guard.get(&id) {
+      if let Ok(master) = session.master.lock() {
+        let _ = master.resize(PtySize {
+          rows,
+          cols,
+          pixel_width: 0,
+          pixel_height: 0,
+        });
+      }
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
     }
+    return Ok(());
+  }
 
-    let pty_system = NativePtySystem::default();
-    let pair = pty_system
-        .openpty(PtySize {
-            rows,
-            cols,
-            pixel_width: 0,
-            pixel_height: 0,
-        })
-        .map_err(|e| format!("Failed to open PTY: {}", e))?;
+  let pty_system = NativePtySystem::default();
+  let pair = pty_system
+    .openpty(PtySize {
+      rows,
+      cols,
+      pixel_width: 0,
+      pixel_height: 0,
+    })
+    .map_err(|e| format!("Failed to open PTY: {}", e))?;
 
+<<<<<<< HEAD
     let mut cmd = CommandBuilder::new_default_prog();
     if let Some(ref path) = cwd {
         if !path.trim().is_empty() {
@@ -100,13 +134,21 @@ pub fn create_terminal<R: Runtime>(
     let child = pair.slave
         .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn shell: {}", e))?;
+=======
+  let cmd = CommandBuilder::new_default_prog();
+  let child = pair
+    .slave
+    .spawn_command(cmd)
+    .map_err(|e| format!("Failed to spawn shell: {}", e))?;
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
 
-    // Drop the slave side to avoid holding resources open in this process
-    drop(pair.slave);
+  // Drop the slave side to avoid holding resources open in this process
+  drop(pair.slave);
 
-    let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
-    let reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
+  let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
+  let reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
 
+<<<<<<< HEAD
     let history = Arc::new(Mutex::new(TerminalHistory {
         bytes: Vec::new(),
         total_read: 0,
@@ -147,43 +189,84 @@ pub fn create_terminal<R: Runtime>(
                     // Shell exited or error reading
                     break;
                 }
+=======
+  let history = Arc::new(Mutex::new(Vec::new()));
+  let shared_history = Arc::clone(&history);
+  let session_id = id.clone();
+
+  // Spawn stdout/stderr reader thread
+  thread::spawn(move || {
+    let mut buf = [0u8; 4096];
+    let mut reader = reader;
+    loop {
+      match reader.read(&mut buf) {
+        Ok(n) if n > 0 => {
+          let data = &buf[..n];
+
+          // Save to history
+          if let Ok(mut hist) = shared_history.lock() {
+            hist.extend_from_slice(data);
+            if hist.len() > MAX_HISTORY_BYTES {
+              let drain_amt = hist.len() - MAX_HISTORY_BYTES;
+              hist.drain(0..drain_amt);
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
             }
+          }
+
+          // Emit event to frontend
+          let text = String::from_utf8_lossy(data).to_string();
+          let event_name = format!("terminal-stdout-{}", session_id);
+          if let Err(e) = window.emit(&event_name, text) {
+            eprintln!("Error emitting terminal event: {:?}", e);
+            break;
+          }
         }
+<<<<<<< HEAD
 
         // Clean up session automatically when the reader thread finishes
         if let Ok(mut sessions_guard) = sessions().lock() {
             sessions_guard.remove(&session_id);
         }
     });
+=======
+        _ => {
+          // Shell exited or error reading
+          break;
+        }
+      }
+    }
+  });
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
 
-    let session = TerminalSession {
-        writer: Arc::new(Mutex::new(writer)),
-        master: Arc::new(Mutex::new(pair.master)),
-        history,
-        child: Arc::new(Mutex::new(child)),
-    };
+  let session = TerminalSession {
+    writer: Arc::new(Mutex::new(writer)),
+    master: Arc::new(Mutex::new(pair.master)),
+    history,
+    child: Arc::new(Mutex::new(child)),
+  };
 
-    sessions_guard.insert(id, session);
-    Ok(())
+  sessions_guard.insert(id, session);
+  Ok(())
 }
 
 #[tauri::command]
 pub fn write_terminal(id: String, data: String) -> Result<(), String> {
-    let sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
-    if let Some(session) = sessions_guard.get(&id) {
-        let mut writer = session.writer.lock().map_err(|e| e.to_string())?;
-        writer
-            .write_all(data.as_bytes())
-            .map_err(|e| format!("Failed to write to terminal: {}", e))?;
-        writer.flush().map_err(|e| e.to_string())?;
-        Ok(())
-    } else {
-        Err("Terminal session not found".to_string())
-    }
+  let sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
+  if let Some(session) = sessions_guard.get(&id) {
+    let mut writer = session.writer.lock().map_err(|e| e.to_string())?;
+    writer
+      .write_all(data.as_bytes())
+      .map_err(|e| format!("Failed to write to terminal: {}", e))?;
+    writer.flush().map_err(|e| e.to_string())?;
+    Ok(())
+  } else {
+    Err("Terminal session not found".to_string())
+  }
 }
 
 #[tauri::command]
 pub fn resize_terminal(id: String, cols: u16, rows: u16) -> Result<(), String> {
+<<<<<<< HEAD
     if cols == 0 || rows == 0 {
         return Ok(()); // Ignore invalid resize events to avoid conhost freezes
     }
@@ -216,15 +299,54 @@ pub fn get_terminal_history(id: String) -> Result<TerminalHistoryInfo, String> {
     } else {
         Err("Terminal session not found".to_string())
     }
+=======
+  let sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
+  if let Some(session) = sessions_guard.get(&id) {
+    let master = session.master.lock().map_err(|e| e.to_string())?;
+    master
+      .resize(PtySize {
+        rows,
+        cols,
+        pixel_width: 0,
+        pixel_height: 0,
+      })
+      .map_err(|e| format!("Failed to resize PTY: {}", e))?;
+    Ok(())
+  } else {
+    Err("Terminal session not found".to_string())
+  }
+}
+
+#[tauri::command]
+pub fn get_terminal_history(id: String) -> Result<String, String> {
+  let sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
+  if let Some(session) = sessions_guard.get(&id) {
+    let history = session.history.lock().map_err(|e| e.to_string())?;
+    Ok(String::from_utf8_lossy(&history).to_string())
+  } else {
+    Err("Terminal session not found".to_string())
+  }
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
 }
 
 #[tauri::command]
 pub fn close_terminal(id: String) -> Result<(), String> {
+<<<<<<< HEAD
     let mut sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
     if sessions_guard.remove(&id).is_some() {
         // Drop implementation handles process killing
         Ok(())
     } else {
         Err("Terminal session not found".to_string())
+=======
+  let mut sessions_guard = sessions().lock().map_err(|e| e.to_string())?;
+  if let Some(session) = sessions_guard.remove(&id) {
+    if let Ok(mut child) = session.child.lock() {
+      let _ = child.kill();
+>>>>>>> b538a7edce2c015d021e5f63d0ac676191ffc0ca
     }
+    Ok(())
+  } else {
+    Err("Terminal session not found".to_string())
+  }
 }
