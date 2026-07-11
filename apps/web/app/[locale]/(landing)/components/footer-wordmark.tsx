@@ -47,14 +47,14 @@ export function FooterWordmark({ text = "HYPERION" }: { text?: string }) {
           gradientUnits="userSpaceOnUse"
           id="wordmark-spotlight"
           initial={{ cx: "50%", cy: "50%" }}
-          r="90"
+          r="120" // increased radius for broader light spread
           transition={{
             duration: reduceMotion ? 0 : 0.28,
             ease: [0.22, 1, 0.36, 1],
           }}
         >
           <stop offset="0%" stopColor="white" />
-          <stop offset="45%" stopColor="white" />
+          <stop offset="60%" stopColor="white" />
           <stop offset="100%" stopColor="black" />
         </motion.radialGradient>
         <mask id="wordmark-spotlight-mask">
