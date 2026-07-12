@@ -38,6 +38,7 @@ interface AgentState {
   availableModels: string[];
   baseUrl: string;
   clearMessages: (workspaceId: string) => void;
+  clearProviderConfig: () => void;
   isOpen: boolean;
   messages: Record<string, AgentMessage[]>; // Mapped by workspace ID
   provider: string;
@@ -117,6 +118,17 @@ export const useAgentStore = create<AgentState>()(
           delete newMessages[workspaceId];
           return { messages: newMessages };
         }),
+      clearProviderConfig: () =>
+        set(() => ({
+          apiKey: "",
+          baseUrl: "https://opencode.ai/zen/v1",
+          provider: "opencode",
+          selectedModel: "",
+          availableModels: [],
+          messages: {},
+          logs: [],
+          terminalStates: {},
+        })),
 
       terminalStates: {},
       setTerminalState: (paneId, state) =>

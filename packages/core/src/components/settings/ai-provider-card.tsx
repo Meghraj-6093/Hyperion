@@ -32,6 +32,7 @@ import {
   Sparkles,
   Terminal,
   XCircle,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ export function AiProviderCard() {
     setAvailableModels,
     health,
     setHealth,
+    clearProviderConfig,
   } = useAgentStore();
 
   const { activeWorkspaceId, workspaces } = useWorkspaceStore();
@@ -308,6 +310,21 @@ export function AiProviderCard() {
                 )}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-border/20 mt-6">
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => {
+                clearProviderConfig();
+                toast.success("All AI Provider config and message data cleared!");
+              }}
+            >
+              <Trash2 className="size-3.5" />
+              Clear Config & Chat Data
+            </Button>
           </div>
         </CardContent>
       </Card>
