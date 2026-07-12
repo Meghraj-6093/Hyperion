@@ -34,7 +34,7 @@ const LaserFlow = dynamic(() => import("./laser-flow"), { ssr: false });
  * come from this WebGL layer; the earlier CSS beam column was removed.
  */
 const BEAM_IMPACT_OFFSET = -0.5;
-const BEAM_X_ANCHOR = 0.2;
+const BEAM_X_ANCHOR = 0.18;
 
 export interface DevsBackdropProps {
   boosted?: boolean;
@@ -56,7 +56,7 @@ export function DevsBackdrop({ boosted = false }: DevsBackdropProps) {
           source continuing above the viewport rather than starting
           exactly at this section. Pinned toward the third card so the
           light appears to originate directly above the beam column. */}
-      <div className="landing-glow-breathe absolute inset-x-0 -top-24 h-72 [background:radial-gradient(60%_100%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_75%)] sm:[background:radial-gradient(46%_100%_at_75%_0%,color-mix(in_oklab,var(--color-primary)_18%,transparent),transparent_75%)]" />
+      <div className="landing-glow-breathe absolute inset-x-0 -top-24 h-72 [background:radial-gradient(60%_100%_at_50%_0%,color-mix(in_oklab,var(--color-primary)_16%,transparent),transparent_75%)] sm:[background:radial-gradient(46%_100%_at_71%_0%,color-mix(in_oklab,var(--color-primary)_18%,transparent),transparent_75%)]" />
 
       {/* soft vignette so the edges recede and the beam stays the
           brightest thing on screen */}
