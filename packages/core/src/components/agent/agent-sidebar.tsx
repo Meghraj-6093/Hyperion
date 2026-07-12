@@ -1,7 +1,7 @@
 "use client";
 
 import { ProviderFactory } from "@workspace/core/lib/providers/provider-factory";
-import { type Task, TaskDispatcher } from "@workspace/core/lib/task-dispatcher";
+import type { Task, TaskDispatcher } from "@workspace/core/lib/task-dispatcher";
 import { safeUUID } from "@workspace/core/lib/uuid";
 import {
   type AgentMessage,
@@ -218,15 +218,14 @@ Respond ONLY with the JSON array of task objects (terminalId, command).`;
 
 async function runOrchestrationLoop(
   initialTasks: Array<{ terminalId: string; command: string }>,
-  dispatcher: any,
+  dispatcher: TaskDispatcher,
   planGoal: string,
   providerInstance: ReturnType<typeof ProviderFactory.getProvider>,
   targetedPanes: { id: string; title: string }[],
   abortSignal: AbortSignal | undefined,
-  requestId: string,
   onIterationChange: (count: number) => void,
   onMessageUpdate: (content: string, isCompleted: boolean) => void,
-  logFn: (msg: string, type: "info" | "warn" | "error") => void
+  logFn: (msg: string, type?: "info" | "warn" | "error") => void
 ): Promise<void> {
   let parsedTasks = [...initialTasks];
   let loopCount = 0;
@@ -253,7 +252,7 @@ async function runOrchestrationLoop(
     const tasks = await Promise.all(dispatchPromises);
 
     // 2. Wait for Results of all dispatched tasks
-    const monitorPromises = tasks.map((task: any) =>
+    const monitorPromises = tasks.map((task: Task) =>
       dispatcher.monitorExecution(task)
     );
     const executedTasks = await Promise.all(monitorPromises);
@@ -261,7 +260,7 @@ async function runOrchestrationLoop(
     // Summarize outputs for reviewer
     const taskResultsSummary = executedTasks
       .map(
-        (task: any) => `
+        (task: Task) => `
 ---
 Terminal: ${task.terminalId}
 Command: ${task.payload.command}
@@ -307,6 +306,88 @@ ${task.output || "[No output]"}
       );
     }
   }
+}
+
+function setTerminalStates(
+  panes: { id: string; title: string }[],
+  state: TerminalState,
+  setter: (id: string, s: TerminalState) => void
+) {
+  for (const p of panes) {
+    setter(p.id, state);
+  }
+}
+
+function getFallbackTasks(
+  targetedPanes: { id: string; title: string }[]
+): Array<{ terminalId: string; command: string }> {
+  const firstPane = targetedPanes[0];
+  if (firstPane) {
+    return [{ terminalId: firstPane.id, command: "echo running task" }];
+  }
+  return [];
+}
+
+async function performPlanExecution(
+  approvedPlan: string,
+  targetedPanes: { id: string; title: string }[],
+  provider: string,
+  apiKey: string,
+  baseUrl: string,
+  selectedModel: string,
+  workspaceId: string,
+  requestId: string,
+  abortSignal: AbortSignal,
+  onTaskUpdate: (task: Task) => void,
+  logFn: (msg: string, type?: "info" | "warn" | "error") => void,
+  onMessageUpdate: (content: string) => void,
+  onIterationChange: (count: number) => void
+) {
+  const providerInstance = ProviderFactory.getProvider(provider);
+  providerInstance.initialize(apiKey, baseUrl, selectedModel);
+
+  let parsedTasks: Array<{ terminalId: string; command: string }> = [];
+  try {
+    parsedTasks = await parsePlanToTasks(
+      approvedPlan,
+      targetedPanes,
+      providerInstance
+    );
+    logFn(
+      `Successfully parsed ${parsedTasks.length} tasks from execution plan.`,
+      "info"
+    );
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    logFn(
+      `Failed to parse plan via LLM: ${errMsg}. Falling back to default shell commands.`,
+      "warn"
+    );
+    parsedTasks = getFallbackTasks(targetedPanes);
+  }
+
+  const { TaskDispatcher } = await import(
+    "@workspace/core/lib/task-dispatcher"
+  );
+
+  const dispatcher = new TaskDispatcher(
+    workspaceId,
+    requestId,
+    onTaskUpdate,
+    logFn
+  );
+
+  await runOrchestrationLoop(
+    parsedTasks,
+    dispatcher,
+    approvedPlan,
+    providerInstance,
+    targetedPanes,
+    abortSignal,
+    onIterationChange,
+    onMessageUpdate,
+    logFn
+  );
 }
 
 export function AgentSidebar() {
@@ -540,66 +621,19 @@ export function AgentSidebar() {
         ? activeWorkspace.panes
         : activeWorkspace.panes.filter((p) => p.id === targetTerminalId);
 
-    for (const p of targetedPanes) {
-      setTerminalState(p.id, "Planning");
-    }
+    setTerminalStates(targetedPanes, "Planning", setTerminalState);
 
     const execMsgId = safeUUID();
-    let accumulatedAgentContent =
-      "🚀 **Initializing Orchestrator Loop**\nRunning task dispatcher...";
-
     upsertMessage(workspaceId, {
       id: execMsgId,
       role: "agent",
-      content: accumulatedAgentContent,
+      content:
+        "🚀 **Initializing Orchestrator Loop**\nRunning task dispatcher...",
       timestamp: Date.now(),
     });
 
     try {
       abortControllerRef.current = new AbortController();
-
-      addLog(
-        "planner",
-        "info",
-        "Parsing execution plan into concrete terminal commands...",
-        requestId
-      );
-
-      const providerInstance = ProviderFactory.getProvider(provider);
-      providerInstance.initialize(apiKey, baseUrl, selectedModel);
-
-      let parsedTasks: Array<{ terminalId: string; command: string }> = [];
-      try {
-        parsedTasks = await parsePlanToTasks(
-          approvedPlan || currentPlan,
-          targetedPanes,
-          providerInstance
-        );
-        addLog(
-          "planner",
-          "info",
-          `Successfully parsed ${parsedTasks.length} tasks from execution plan.`,
-          requestId
-        );
-      } catch (err: unknown) {
-        const errMsg = err instanceof Error ? err.message : String(err);
-        addLog(
-          "planner",
-          "warn",
-          `Failed to parse plan via LLM: ${errMsg}. Falling back to default shell commands.`,
-          requestId
-        );
-        const firstPane = targetedPanes[0];
-        if (firstPane) {
-          parsedTasks = [
-            { terminalId: firstPane.id, command: "echo running task" },
-          ];
-        }
-      }
-
-      const { TaskDispatcher } = await import(
-        "@workspace/core/lib/task-dispatcher"
-      );
 
       const onTaskUpdate = (task: Task) => {
         const taskMsgContent = formatTaskStatusMessage(task);
@@ -615,28 +649,19 @@ export function AgentSidebar() {
         setTerminalState(task.terminalId, mappedState);
       };
 
-      const logFn = (msg: string, type: "info" | "warn" | "error" = "info") => {
-        addLog("planner", type, msg, requestId);
-      };
-
-      const dispatcher = new TaskDispatcher(
+      await performPlanExecution(
+        approvedPlan || currentPlan,
+        targetedPanes,
+        provider,
+        apiKey,
+        baseUrl,
+        selectedModel,
         workspaceId,
         requestId,
-        onTaskUpdate,
-        logFn
-      );
-
-      await runOrchestrationLoop(
-        parsedTasks,
-        dispatcher,
-        approvedPlan || currentPlan,
-        providerInstance,
-        targetedPanes,
         abortControllerRef.current.signal,
-        requestId,
-        (count) => setIterationCount(count),
+        onTaskUpdate,
+        (msg, type) => addLog("planner", type || "info", msg, requestId),
         (content) => {
-          accumulatedAgentContent = content;
           upsertMessage(workspaceId, {
             id: execMsgId,
             role: "agent",
@@ -644,12 +669,10 @@ export function AgentSidebar() {
             timestamp: Date.now(),
           });
         },
-        (msg, type) => addLog("planner", type, msg, requestId)
+        (count) => setIterationCount(count)
       );
 
-      for (const p of targetedPanes) {
-        setTerminalState(p.id, "Completed");
-      }
+      setTerminalStates(targetedPanes, "Completed", setTerminalState);
       addLog(
         "planner",
         "info",
@@ -667,25 +690,20 @@ export function AgentSidebar() {
           requestId
         );
         toast.info("Execution cancelled.");
-        for (const p of targetedPanes) {
-          setTerminalState(p.id, "Cancelled");
-        }
+        setTerminalStates(targetedPanes, "Cancelled", setTerminalState);
       } else {
         const { fullErrorMessage } = handleDetailedError(
           error,
           "planner",
           requestId
         );
-        accumulatedAgentContent = `⚠️ **Execution Error:**\n${fullErrorMessage}`;
         upsertMessage(workspaceId, {
           id: execMsgId,
           role: "agent",
-          content: accumulatedAgentContent,
+          content: `⚠️ **Execution Error:**\n${fullErrorMessage}`,
           timestamp: Date.now(),
         });
-        for (const p of targetedPanes) {
-          setTerminalState(p.id, "Failed");
-        }
+        setTerminalStates(targetedPanes, "Failed", setTerminalState);
       }
     } finally {
       setIsTyping(false);
