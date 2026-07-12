@@ -1,7 +1,16 @@
 "use client";
 
+import {
+  addIteration,
+  cancelOrchestration,
+  type OrchestrationEvent,
+  onOrchestrationEvent,
+  startOrchestration,
+  type TaskInput,
+  type TaskResult,
+} from "@workspace/core/lib/orchestrator-client";
 import { ProviderFactory } from "@workspace/core/lib/providers/provider-factory";
-import type { Task, TaskDispatcher } from "@workspace/core/lib/task-dispatcher";
+
 import { safeUUID } from "@workspace/core/lib/uuid";
 import {
   type AgentMessage,
@@ -37,43 +46,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const MAX_ITERATIONS = 20;
-
-function getTerminalStateFromTaskStatus(status: Task["status"]): TerminalState {
-  switch (status) {
-    case "Queued":
-      return "Waiting";
-    case "Dispatched":
-    case "Acknowledged":
-    case "Running":
-      return "Running";
-    case "Streaming":
-      return "Streaming";
-    case "Completed":
-      return "Completed";
-    case "Failed":
-      return "Failed";
-    case "Retry":
-      return "Retrying";
-    default:
-      return "Running";
-  }
-}
-
-function formatTaskStatusMessage(task: Task): string {
-  const outputSection = task.output
-    ? `\n**Output:**\n\`\`\`\n${task.output.slice(-1000)}\n\`\`\``
-    : "";
-  const errorSection = task.error ? `\n⚠️ **Error:** ${task.error}` : "";
-
-  return `### 📋 Task Dispatcher Status Update
-Workspace: \`${task.workspaceId}\`
-Parent Request: \`${task.parentRequestId}\`
-
-- **Task ID:** \`${task.id}\`
-- **Terminal ID:** \`${task.terminalId}\`
-- **Command:** \`${task.payload.command}\`
-- **Status:** **${task.status}** ${task.retryCount > 0 ? `(Retry ${task.retryCount}/3)` : ""}${outputSection}${errorSection}`;
-}
 
 function buildPlanningSystemPrompt(
   panes: { id: string; title: string }[]
@@ -216,178 +188,358 @@ Respond ONLY with the JSON array of task objects (terminalId, command).`;
   return JSON.parse(nextClean);
 }
 
-async function runOrchestrationLoop(
-  initialTasks: Array<{ terminalId: string; command: string }>,
-  dispatcher: TaskDispatcher,
-  planGoal: string,
+function handleOrchestrationEvent(
+  event: OrchestrationEvent,
+  setTerminalState: (id: string, s: TerminalState) => void,
+  resolve: (results: TaskResult[]) => void,
+  reject: (err: Error) => void,
+  timeoutId: NodeJS.Timeout,
+  cleanup: () => void
+) {
+  const tid = event.data.terminalId as string | undefined;
+
+  switch (event.eventType) {
+    case "task_dispatched":
+      if (tid) {
+        setTerminalState(tid, "Dispatched");
+      }
+      break;
+    case "task_acknowledged":
+      if (tid) {
+        setTerminalState(tid, "Acknowledged");
+      }
+      break;
+    case "task_running":
+      if (tid) {
+        setTerminalState(tid, "Running");
+      }
+      break;
+    case "task_streaming":
+      if (tid) {
+        setTerminalState(tid, "Streaming");
+      }
+      break;
+    case "task_completed":
+      if (tid) {
+        setTerminalState(tid, "Completed");
+      }
+      break;
+    case "task_failed":
+      if (tid) {
+        setTerminalState(tid, "Failed");
+      }
+      break;
+    case "task_retrying":
+      if (tid) {
+        setTerminalState(tid, "Retrying");
+      }
+      break;
+    case "iteration_complete":
+      clearTimeout(timeoutId);
+      cleanup();
+      resolve((event.data.results || []) as TaskResult[]);
+      break;
+    case "orchestration_failed":
+      clearTimeout(timeoutId);
+      cleanup();
+      reject(new Error((event.data.error as string) || "Orchestration failed"));
+      break;
+    case "orchestration_cancelled":
+      clearTimeout(timeoutId);
+      cleanup();
+      reject(new Error("Orchestration cancelled"));
+      break;
+    default:
+      break;
+  }
+}
+
+function waitForIterationComplete(
+  _requestId: string,
+  setTerminalState: (id: string, s: TerminalState) => void
+): Promise<TaskResult[]> {
+  return new Promise<TaskResult[]>((resolve, reject) => {
+    let unlistenFn: (() => void) | null = null;
+    let resolved = false;
+
+    const cleanup = () => {
+      resolved = true;
+      if (unlistenFn) {
+        unlistenFn();
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        cleanup();
+        reject(new Error("Iteration timed out after 90 seconds"));
+      }
+    }, 90_000);
+
+    onOrchestrationEvent((event: OrchestrationEvent) => {
+      if (resolved) {
+        return;
+      }
+      handleOrchestrationEvent(
+        event,
+        setTerminalState,
+        resolve,
+        reject,
+        timeoutId,
+        cleanup
+      );
+    }).then((unsub) => {
+      unlistenFn = unsub;
+      if (resolved) {
+        unsub();
+      }
+    });
+  });
+}
+
+async function executeSingleIteration(
+  requestId: string,
+  currentIteration: number,
+  maxLoops: number,
+  approvedPlan: string,
+  currentPlan: string,
   providerInstance: ReturnType<typeof ProviderFactory.getProvider>,
   targetedPanes: { id: string; title: string }[],
-  abortSignal: AbortSignal | undefined,
-  onIterationChange: (count: number) => void,
-  onMessageUpdate: (content: string, isCompleted: boolean) => void,
-  logFn: (msg: string, type?: "info" | "warn" | "error") => void
-): Promise<void> {
-  let parsedTasks = [...initialTasks];
-  let loopCount = 0;
-  const maxLoops = 5;
-  let completedOrchestration = false;
-
-  while (!completedOrchestration && loopCount < maxLoops) {
-    loopCount++;
-    onIterationChange(loopCount);
-    logFn(
-      `Starting Orchestration Loop Iteration ${loopCount}/${maxLoops}...`,
-      "info"
-    );
-
-    if (abortSignal?.aborted) {
-      logFn("Execution loop aborted", "warn");
-      break;
-    }
-
-    // 1. Dispatch tasks in parallel
-    const dispatchPromises = parsedTasks.map((taskItem) =>
-      dispatcher.dispatch(taskItem.terminalId, taskItem.command)
-    );
-    const tasks = await Promise.all(dispatchPromises);
-
-    // 2. Wait for Results of all dispatched tasks
-    const monitorPromises = tasks.map((task: Task) =>
-      dispatcher.monitorExecution(task)
-    );
-    const executedTasks = await Promise.all(monitorPromises);
-
-    // Summarize outputs for reviewer
-    const taskResultsSummary = executedTasks
-      .map(
-        (task: Task) => `
----
-Terminal: ${task.terminalId}
-Command: ${task.payload.command}
-Status: ${task.status}
-Error: ${task.error || "None"}
-Output:
-${task.output || "[No output]"}
-`
-      )
-      .join("\n");
-
-    // 3. Review Results
-    logFn("Reviewing task execution results...", "info");
-
-    const reviewObj = await reviewExecutionResults(
-      planGoal,
-      taskResultsSummary,
-      providerInstance
-    );
-
-    if (reviewObj.status === "COMPLETED") {
-      completedOrchestration = true;
-      const summary = reviewObj.summary || "Goal achieved.";
-      onMessageUpdate(
-        `🎉 **Orchestration Completed successfully!**\n\n${summary}`,
-        true
-      );
-      logFn("Orchestration review passed. Completed.", "info");
-    } else {
-      const explanation =
-        reviewObj.explanation || "Execution needs improvement.";
-      logFn(`Orchestration review flagged issues: ${explanation}`, "warn");
-      onMessageUpdate(
-        `🔄 **Iteration ${loopCount} Review:**\n${explanation}\n\n*Next Plan:* ${reviewObj.nextPlan}`,
-        false
-      );
-
-      // Parse nextPlan to get the next tasks to execute
-      parsedTasks = await parseNextPlanToTasks(
-        reviewObj.nextPlan || "",
-        targetedPanes,
-        providerInstance
-      );
-    }
-  }
-}
-
-function setTerminalStates(
-  panes: { id: string; title: string }[],
-  state: TerminalState,
-  setter: (id: string, s: TerminalState) => void
-) {
-  for (const p of panes) {
-    setter(p.id, state);
-  }
-}
-
-function getFallbackTasks(
-  targetedPanes: { id: string; title: string }[]
-): Array<{ terminalId: string; command: string }> {
-  const firstPane = targetedPanes[0];
-  if (firstPane) {
-    return [{ terminalId: firstPane.id, command: "echo running task" }];
-  }
-  return [];
-}
-
-async function performPlanExecution(
-  approvedPlan: string,
-  targetedPanes: { id: string; title: string }[],
-  provider: string,
-  apiKey: string,
-  baseUrl: string,
-  selectedModel: string,
   workspaceId: string,
-  requestId: string,
-  abortSignal: AbortSignal,
-  onTaskUpdate: (task: Task) => void,
+  execMsgId: string,
+  setTerminalState: (id: string, s: TerminalState) => void,
   logFn: (msg: string, type?: "info" | "warn" | "error") => void,
-  onMessageUpdate: (content: string) => void,
-  onIterationChange: (count: number) => void
-) {
-  const providerInstance = ProviderFactory.getProvider(provider);
-  providerInstance.initialize(apiKey, baseUrl, selectedModel);
+  // biome-ignore lint/suspicious/noExplicitAny: matching store type
+  upsertMessage: (workspaceId: string, msg: any) => void
+): Promise<{ completed: boolean; newTasks?: TaskInput[] }> {
+  logFn(`Waiting for iteration ${currentIteration} results...`);
+  upsertMessage(workspaceId, {
+    id: execMsgId,
+    role: "agent",
+    content: `⏳ **Iteration ${currentIteration}/${maxLoops}** — Executing tasks...`,
+    timestamp: Date.now(),
+  });
 
-  let parsedTasks: Array<{ terminalId: string; command: string }> = [];
+  // Wait for all tasks to complete
+  const results = await waitForIterationComplete(requestId, setTerminalState);
+  logFn(`Iteration ${currentIteration} complete. Reviewing results...`);
+
+  // Build results summary for LLM review
+  const taskResultsSummary = results
+    .map(
+      (r) =>
+        `---\nTerminal: ${r.terminalId}\nCommand: ${r.command}\nStatus: ${r.status}\nError: ${r.error || "None"}\nOutput:\n${r.output || "[No output]"}\n`
+    )
+    .join("\n");
+
+  upsertMessage(workspaceId, {
+    id: execMsgId,
+    role: "agent",
+    content: `🔍 **Reviewing iteration ${currentIteration} results...**`,
+    timestamp: Date.now(),
+  });
+
+  // LLM review
+  const reviewObj = await reviewExecutionResults(
+    approvedPlan || currentPlan,
+    taskResultsSummary,
+    providerInstance
+  );
+
+  if (reviewObj.status === "COMPLETED") {
+    const summary = reviewObj.summary || "Goal achieved.";
+    upsertMessage(workspaceId, {
+      id: execMsgId,
+      role: "agent",
+      content: `🎉 **Orchestration Complete!**\n\n${summary}`,
+      timestamp: Date.now(),
+    });
+    logFn("Orchestration completed successfully");
+    for (const p of targetedPanes) {
+      setTerminalState(p.id, "Completed");
+    }
+    return { completed: true };
+  }
+
+  const explanation = reviewObj.explanation || "Needs improvement.";
+  logFn(`Review: ${explanation}`, "warn");
+  upsertMessage(workspaceId, {
+    id: execMsgId,
+    role: "agent",
+    content: `🔄 **Iteration ${currentIteration} needs improvement:**\n${explanation}\n\nStarting next iteration...`,
+    timestamp: Date.now(),
+  });
+
+  // Parse new tasks from review
+  const newRawTasks = await parseNextPlanToTasks(
+    reviewObj.nextPlan || "",
+    targetedPanes,
+    providerInstance
+  );
+  const newTasks: TaskInput[] = newRawTasks.map((t) => ({
+    terminalId: t.terminalId,
+    command: t.command,
+  }));
+  return { completed: false, newTasks };
+}
+
+async function parseTasksWithFallback(
+  approvedPlan: string | undefined,
+  currentPlan: string,
+  targetedPanes: { id: string; title: string }[],
+  providerInstance: ReturnType<typeof ProviderFactory.getProvider>,
+  _requestId: string,
+  logFn: (msg: string, type?: "info" | "warn" | "error") => void
+): Promise<TaskInput[]> {
   try {
-    parsedTasks = await parsePlanToTasks(
-      approvedPlan,
+    const rawTasks = await parsePlanToTasks(
+      approvedPlan || currentPlan,
       targetedPanes,
       providerInstance
     );
-    logFn(
-      `Successfully parsed ${parsedTasks.length} tasks from execution plan.`,
-      "info"
-    );
+    const parsedTasks = rawTasks.map((t) => ({
+      terminalId: t.terminalId,
+      command: t.command,
+    }));
+    logFn(`Parsed ${parsedTasks.length} tasks from plan`, "info");
+    return parsedTasks;
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    logFn(
-      `Failed to parse plan via LLM: ${errMsg}. Falling back to default shell commands.`,
-      "warn"
+    logFn(`Failed to parse plan: ${errMsg}. Using fallback.`, "warn");
+    const firstPane = targetedPanes[0];
+    if (firstPane) {
+      return [
+        {
+          terminalId: firstPane.id,
+          command: "echo 'Hyperion task placeholder'",
+        },
+      ];
+    }
+    return [];
+  }
+}
+
+function handleExecutePlanError(
+  error: unknown,
+  requestId: string,
+  targetedPanes: { id: string; title: string }[],
+  execMsgId: string,
+  workspaceId: string,
+  setTerminalState: (id: string, s: TerminalState) => void,
+  logFn: (msg: string, type?: "info" | "warn" | "error") => void,
+  // biome-ignore lint/suspicious/noExplicitAny: matching store type
+  upsertMessage: (workspaceId: string, msg: any) => void,
+  handleDetailedErrorFn: (
+    error: unknown,
+    source: "frontend" | "backend" | "ipc" | "api" | "planner" | "terminal",
+    requestId: string
+  ) => { reason: string; suggestion: string; fullErrorMessage: string }
+) {
+  const isAbortError =
+    error instanceof Error &&
+    (error.name === "AbortError" || error.message === "AbortError");
+  if (isAbortError) {
+    logFn("Execution cancelled by user", "warn");
+    toast.info("Execution cancelled.");
+    for (const p of targetedPanes) {
+      setTerminalState(p.id, "Cancelled");
+    }
+  } else {
+    const { fullErrorMessage } = handleDetailedErrorFn(
+      error,
+      "planner",
+      requestId
     );
-    parsedTasks = getFallbackTasks(targetedPanes);
+    upsertMessage(workspaceId, {
+      id: execMsgId,
+      role: "agent",
+      content: `⚠️ **Execution Error:**\n${fullErrorMessage}`,
+      timestamp: Date.now(),
+    });
+    for (const p of targetedPanes) {
+      setTerminalState(p.id, "Failed");
+    }
+  }
+}
+
+function getTargetedPanes(
+  targetTerminalId: string,
+  panes: { id: string; title: string }[]
+): { id: string; title: string }[] {
+  if (targetTerminalId === "all") {
+    return panes;
+  }
+  return panes.filter((p) => p.id === targetTerminalId);
+}
+
+async function runIterationLoop(
+  requestId: string,
+  maxLoops: number,
+  approvedPlan: string | undefined,
+  currentPlan: string,
+  providerInstance: ReturnType<typeof ProviderFactory.getProvider>,
+  targetedPanes: { id: string; title: string }[],
+  workspaceId: string,
+  execMsgId: string,
+  setTerminalState: (id: string, s: TerminalState) => void,
+  logFn: (msg: string, type?: "info" | "warn" | "error") => void,
+  // biome-ignore lint/suspicious/noExplicitAny: matching store type
+  upsertMessage: (workspaceId: string, msg: any) => void,
+  abortSignal: AbortSignal,
+  setIterationCount: (count: number) => void
+): Promise<void> {
+  let completed = false;
+  let currentIteration = 1;
+  setIterationCount(currentIteration);
+
+  while (!completed && currentIteration <= maxLoops) {
+    if (abortSignal.aborted) {
+      await cancelOrchestration(requestId);
+      throw new Error("AbortError");
+    }
+
+    const iterationResult = await executeSingleIteration(
+      requestId,
+      currentIteration,
+      maxLoops,
+      approvedPlan || currentPlan,
+      currentPlan,
+      providerInstance,
+      targetedPanes,
+      workspaceId,
+      execMsgId,
+      setTerminalState,
+      logFn,
+      upsertMessage
+    );
+
+    if (iterationResult.completed) {
+      completed = true;
+    } else if (
+      iterationResult.newTasks &&
+      iterationResult.newTasks.length > 0
+    ) {
+      currentIteration++;
+      setIterationCount(currentIteration);
+      await addIteration(requestId, iterationResult.newTasks);
+      logFn(
+        `Started iteration ${currentIteration} with ${iterationResult.newTasks.length} tasks`,
+        "info"
+      );
+    } else {
+      logFn("No new tasks from review, stopping loop", "warn");
+      break;
+    }
   }
 
-  const { TaskDispatcher } = await import(
-    "@workspace/core/lib/task-dispatcher"
-  );
-
-  const dispatcher = new TaskDispatcher(
-    workspaceId,
-    requestId,
-    onTaskUpdate,
-    logFn
-  );
-
-  await runOrchestrationLoop(
-    parsedTasks,
-    dispatcher,
-    approvedPlan,
-    providerInstance,
-    targetedPanes,
-    abortSignal,
-    onIterationChange,
-    onMessageUpdate,
-    logFn
-  );
+  if (!completed) {
+    upsertMessage(workspaceId, {
+      id: execMsgId,
+      role: "agent",
+      content: `⚠️ **Orchestration reached maximum iterations (${maxLoops}).**\nThe goal may not be fully achieved. Review terminal outputs for details.`,
+      timestamp: Date.now(),
+    });
+  }
 }
 
 export function AgentSidebar() {
@@ -568,6 +720,7 @@ export function AgentSidebar() {
 
       setCurrentPlan(planContent);
       setEditedPlanText(planContent);
+      setIsTyping(false);
       addLog(
         "planner",
         "info",
@@ -609,102 +762,104 @@ export function AgentSidebar() {
     setPlannerState("executing");
     setIsTyping(true);
     setIterationCount(0);
-    addLog(
-      "planner",
-      "info",
-      "Starting execution of the approved orchestration loop",
-      requestId
+    addLog("planner", "info", "Starting orchestration engine", requestId);
+
+    const targetedPanes = getTargetedPanes(
+      targetTerminalId,
+      activeWorkspace.panes
     );
 
-    const targetedPanes =
-      targetTerminalId === "all"
-        ? activeWorkspace.panes
-        : activeWorkspace.panes.filter((p) => p.id === targetTerminalId);
-
-    setTerminalStates(targetedPanes, "Planning", setTerminalState);
+    for (const p of targetedPanes) {
+      setTerminalState(p.id, "Planning");
+    }
 
     const execMsgId = safeUUID();
     upsertMessage(workspaceId, {
       id: execMsgId,
       role: "agent",
-      content:
-        "🚀 **Initializing Orchestrator Loop**\nRunning task dispatcher...",
+      content: "🚀 **Initializing Orchestrator**\nParsing execution plan...",
       timestamp: Date.now(),
     });
 
     try {
       abortControllerRef.current = new AbortController();
 
-      const onTaskUpdate = (task: Task) => {
-        const taskMsgContent = formatTaskStatusMessage(task);
+      const providerInstance = ProviderFactory.getProvider(provider);
+      providerInstance.initialize(apiKey, baseUrl, selectedModel);
 
-        upsertMessage(workspaceId, {
-          id: `task-msg-${task.id}`,
-          role: "system",
-          content: taskMsgContent,
-          timestamp: Date.now(),
-        });
+      const logFn = (msg: string, type?: "info" | "warn" | "error") =>
+        addLog("planner", type || "info", msg, requestId);
 
-        const mappedState = getTerminalStateFromTaskStatus(task.status);
-        setTerminalState(task.terminalId, mappedState);
-      };
-
-      await performPlanExecution(
-        approvedPlan || currentPlan,
+      // 1. Parse plan into tasks with fallback handling
+      const parsedTasks = await parseTasksWithFallback(
+        approvedPlan,
+        currentPlan,
         targetedPanes,
-        provider,
-        apiKey,
-        baseUrl,
-        selectedModel,
-        workspaceId,
+        providerInstance,
         requestId,
-        abortControllerRef.current.signal,
-        onTaskUpdate,
-        (msg, type) => addLog("planner", type || "info", msg, requestId),
-        (content) => {
-          upsertMessage(workspaceId, {
-            id: execMsgId,
-            role: "agent",
-            content,
-            timestamp: Date.now(),
-          });
-        },
-        (count) => setIterationCount(count)
+        logFn
       );
 
-      setTerminalStates(targetedPanes, "Completed", setTerminalState);
+      if (parsedTasks.length === 0) {
+        throw new Error("No tasks could be parsed from the execution plan.");
+      }
+
+      // 2. Start orchestration via backend
+      upsertMessage(workspaceId, {
+        id: execMsgId,
+        role: "agent",
+        content: `🚀 **Dispatching ${parsedTasks.length} tasks to terminals...**`,
+        timestamp: Date.now(),
+      });
+
+      for (const p of targetedPanes) {
+        setTerminalState(p.id, "Waiting");
+      }
+
+      await startOrchestration(
+        requestId,
+        workspaceId,
+        approvedPlan || currentPlan,
+        parsedTasks,
+        5 // max iterations
+      );
       addLog(
         "planner",
         "info",
-        "Autonomous loop executed successfully",
+        "Orchestration started, tasks dispatched",
         requestId
       );
+
+      // 3. Run iteration loop
+      await runIterationLoop(
+        requestId,
+        5, // maxLoops
+        approvedPlan,
+        currentPlan,
+        providerInstance,
+        targetedPanes,
+        workspaceId,
+        execMsgId,
+        setTerminalState,
+        logFn,
+        upsertMessage,
+        abortControllerRef.current.signal,
+        setIterationCount
+      );
     } catch (error: unknown) {
-      const isAbortError =
-        error instanceof Error && error.name === "AbortError";
-      if (isAbortError || abortControllerRef.current?.signal.aborted) {
-        addLog(
-          "planner",
-          "warn",
-          "Execution loop cancelled by user",
-          requestId
-        );
-        toast.info("Execution cancelled.");
-        setTerminalStates(targetedPanes, "Cancelled", setTerminalState);
-      } else {
-        const { fullErrorMessage } = handleDetailedError(
-          error,
-          "planner",
-          requestId
-        );
-        upsertMessage(workspaceId, {
-          id: execMsgId,
-          role: "agent",
-          content: `⚠️ **Execution Error:**\n${fullErrorMessage}`,
-          timestamp: Date.now(),
-        });
-        setTerminalStates(targetedPanes, "Failed", setTerminalState);
-      }
+      const logFn = (msg: string, type?: "info" | "warn" | "error") =>
+        addLog("planner", type || "info", msg, requestId);
+      handleExecutePlanError(
+        error,
+        requestId,
+        targetedPanes,
+        execMsgId,
+        workspaceId,
+        setTerminalState,
+        logFn,
+        upsertMessage,
+        handleDetailedError
+      );
     } finally {
       setIsTyping(false);
       setIterationCount(0);
