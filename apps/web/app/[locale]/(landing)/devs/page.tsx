@@ -101,7 +101,8 @@ export default function DevsPage() {
 
       {/* The beam lands here — its top edge is pulled up under the
           beam's impact point (see ImpactBase's -mt). */}
-      <ImpactBase />
+      <ImpactBase members={devs.map((d) => d.initials)} />
     </div>
   );
 }
+
