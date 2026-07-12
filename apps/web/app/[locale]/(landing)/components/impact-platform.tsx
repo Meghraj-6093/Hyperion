@@ -14,7 +14,7 @@ import { CtaLink, Eyebrow } from "./marketing-kit";
  */
 export function ImpactBase({ members = [] }: { members?: string[] }) {
   return (
-    <div className="relative -mt-16">
+    <div className="relative -mt-1">
       <div className="relative mx-auto h-[54vh] min-h-[440px] max-w-[1700px] overflow-hidden rounded-t-[44px] border border-white/[0.07] border-b-0 shadow-[inset_0_1px_0_0] shadow-white/[0.12]">
         {/* decorative light-catch layers */}
         <div
@@ -41,7 +41,7 @@ export function ImpactBase({ members = [] }: { members?: string[] }) {
 
         {/* Closing content — sits below the strike so the base no longer
             reads as an empty box. */}
-        <div className="relative z-10 mx-auto flex h-full max-w-2xl flex-col items-center justify-center px-6 pt-16 text-center">
+        <div className="relative z-10 mx-auto flex h-full max-w-2xl flex-col items-center justify-center px-6 pt-32 text-center">
           <Eyebrow>The founding team</Eyebrow>
           <h2 className="mt-5 text-balance font-display text-3xl text-foreground tracking-tighter md:text-5xl">
             The people behind the beam

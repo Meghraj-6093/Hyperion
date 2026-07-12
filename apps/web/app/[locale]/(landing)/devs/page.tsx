@@ -65,7 +65,7 @@ export default function DevsPage() {
           container so DevsBackdrop (absolute inset-0, the LaserFlow beam)
           sizes itself to the whole thing. Roughly one screen tall so the
           beam reads top-to-platform without a dead upper region. */}
-      <section className="relative min-h-[82vh] overflow-hidden">
+      <section className="relative min-h-[82vh] overflow-hidden pb-40">
         {/* The LaserFlow shader IS the beam — a volumetric platinum shaft
             offset to the 3rd/4th card seam, falling onto ImpactBase. */}
         <DevsBackdrop boosted={anyCardHovered} />
