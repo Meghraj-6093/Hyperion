@@ -59,7 +59,11 @@ export class OpenAICompatibleProvider implements AIProvider {
   async authenticate(): Promise<boolean> {
     try {
       const fetchFn = this.getFetchFn();
-      if (this.baseUrl.includes("generativelanguage.googleapis.com")) {
+      if (
+        this.baseUrl.includes("generativelanguage.googleapis.com") ||
+        this.baseUrl.includes("google") ||
+        this.baseUrl.includes("gemini")
+      ) {
         const res = await fetchFn(`${this.baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
@@ -541,6 +545,8 @@ export class ProviderFactory {
         return new AnthropicDirectProvider();
       case "opencode":
       case "openai":
+      case "google":
+      case "gemini":
       default:
         return new OpenAICompatibleProvider();
     }

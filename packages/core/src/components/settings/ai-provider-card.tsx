@@ -83,7 +83,11 @@ export function AiProviderCard() {
         return;
       }
 
-      if (baseUrl.includes("generativelanguage.googleapis.com")) {
+      if (
+        provider === "google" ||
+        provider === "gemini" ||
+        baseUrl.includes("generativelanguage.googleapis.com")
+      ) {
         const geminiModels = [
           "gemini-1.5-flash",
           "gemini-1.5-pro",
@@ -226,6 +230,8 @@ export function AiProviderCard() {
                   setBaseUrl("https://api.openai.com/v1");
                 } else if (val === "anthropic") {
                   setBaseUrl("https://api.anthropic.com/v1");
+                } else if (val === "google") {
+                  setBaseUrl("https://generativelanguage.googleapis.com/v1beta/openai/");
                 }
               }}
               value={provider}
@@ -241,6 +247,7 @@ export function AiProviderCard() {
                   OpenAI Compatible (OpenRouter, LMStudio, etc)
                 </SelectItem>
                 <SelectItem value="anthropic">Anthropic (Direct)</SelectItem>
+                <SelectItem value="google">Google Gemini (AI Studio)</SelectItem>
               </SelectContent>
             </Select>
           </div>
