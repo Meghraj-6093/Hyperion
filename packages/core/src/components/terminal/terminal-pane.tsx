@@ -2,6 +2,7 @@
 
 import { useMounted } from "@workspace/core/hooks/use-mounted";
 import "@xterm/xterm/css/xterm.css";
+import type { OrchestrationTask } from "@workspace/core/lib/orchestrator-client";
 import type { Task } from "@workspace/core/lib/task-dispatcher";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -147,12 +148,11 @@ async function processTaskOutput(
 ) {
   taskInfo.output += data;
 
-  const { invoke: inv } = await import("@tauri-apps/api/core");
-  await inv("report_task_status", {
-    taskId: taskInfo.id,
-    status: "Streaming",
-    data,
-  });
+  const { updateTaskStatus } = await import(
+    "@workspace/core/lib/orchestrator-client"
+  );
+
+  await updateTaskStatus(taskInfo.id, "Streaming", data);
 
   const marker = `TASK_FINISHED_${taskInfo.id}_`;
   const markerIdx = taskInfo.output.lastIndexOf(marker);
@@ -162,16 +162,21 @@ async function processTaskOutput(
     if (exitCodeMatch) {
       const exitCode = Number.parseInt(exitCodeMatch[1] || "0", 10);
       if (exitCode === 0) {
-        await inv("report_task_status", {
-          taskId: taskInfo.id,
-          status: "Completed",
-        });
+        await updateTaskStatus(
+          taskInfo.id,
+          "Completed",
+          undefined,
+          undefined,
+          exitCode
+        );
       } else {
-        await inv("report_task_status", {
-          taskId: taskInfo.id,
-          status: "Failed",
-          error: `Command exited with non-zero code: ${exitCode}`,
-        });
+        await updateTaskStatus(
+          taskInfo.id,
+          "Failed",
+          undefined,
+          `Command exited with non-zero code: ${exitCode}`,
+          exitCode
+        );
       }
       activeTaskRef.current = null;
     }
@@ -180,56 +185,45 @@ async function processTaskOutput(
 
 async function runTaskExecution(
   id: string,
-  task: Task,
+  task: Task | OrchestrationTask,
   activeTaskRef: {
     current: { id: string; command: string; output: string } | null;
   },
   termRef: React.RefObject<TerminalInstance>,
   disposed: boolean
 ) {
-  const { emitEvent } = await import("@workspace/core/lib/task-dispatcher");
+  const { acknowledgeTask, updateTaskStatus } = await import(
+    "@workspace/core/lib/orchestrator-client"
+  );
 
   // 1. Send ACK
   try {
-    const { isTauri: checkTauri } = await import("@tauri-apps/api/core");
-    if (checkTauri()) {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("ack_task", { taskId: task.id, terminalId: id });
-    } else {
-      await emitEvent(`task-ack-${task.id}`, {
-        taskId: task.id,
-        terminalId: id,
-      });
-    }
+    await acknowledgeTask(task.id, id);
   } catch {
+    // Fallback: emit event directly
+    const { emitEvent } = await import("@workspace/core/lib/task-dispatcher");
     await emitEvent(`task-ack-${task.id}`, { taskId: task.id, terminalId: id });
   }
 
-  // 2. Set task to Running and report status
+  // 2. Report Running status
   try {
-    const { isTauri: checkTauri } = await import("@tauri-apps/api/core");
-    if (checkTauri()) {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("report_task_status", {
-        taskId: task.id,
-        status: "Running",
-      });
-    } else {
-      await emitEvent(`task-status-${task.id}`, {
-        taskId: task.id,
-        status: "Running",
-      });
-    }
+    await updateTaskStatus(task.id, "Running");
   } catch {
+    const { emitEvent } = await import("@workspace/core/lib/task-dispatcher");
     await emitEvent(`task-status-${task.id}`, {
       taskId: task.id,
       status: "Running",
     });
   }
 
+  const command =
+    "payload" in task && task.payload
+      ? task.payload.command
+      : (task as OrchestrationTask).command || "";
+
   activeTaskRef.current = {
     id: task.id,
-    command: task.payload.command,
+    command,
     output: "",
   };
 
@@ -245,28 +239,33 @@ async function runTaskExecution(
   if (checkTauriActive) {
     const { invoke } = await import("@tauri-apps/api/core");
     const isWin = navigator.userAgent.includes("Windows");
+    // Use $LASTEXITCODE for PowerShell, $? for bash
     const commandWithSuffix = isWin
-      ? `${task.payload.command} & echo TASK_FINISHED_${task.id}_%ERRORLEVEL%\r`
-      : `${task.payload.command}; echo TASK_FINISHED_${task.id}_$?\r`;
+      ? `${command} ; echo TASK_FINISHED_${task.id}_$LASTEXITCODE\r`
+      : `${command}; echo TASK_FINISHED_${task.id}_$?\r`;
 
     await invoke("write_terminal", { id, data: commandWithSuffix });
   } else {
     const term = termRef.current;
     if (term) {
-      term.write(`${task.payload.command}\r\n`);
+      term.write(`${command}\r\n`);
       simulateMockStreaming(task, activeTaskRef, term, disposed);
     }
   }
 }
 
 function simulateMockStreaming(
-  task: Task,
+  task: Task | OrchestrationTask,
   activeTaskRef: {
     current: { id: string; command: string; output: string } | null;
   },
   term: TerminalInstance,
   disposed: boolean
 ) {
+  const command =
+    "payload" in task && task.payload
+      ? task.payload.command
+      : (task as OrchestrationTask).command || "";
   let count = 0;
   const interval = setInterval(async () => {
     if (disposed || !activeTaskRef.current) {
@@ -274,32 +273,38 @@ function simulateMockStreaming(
       return;
     }
     count++;
-    const mockData = `Chunk ${count} of mock output for command "${task.payload.command}"\r\n`;
+    const mockData = `Chunk ${count} of mock output for command "${command}"\r\n`;
     term.write(mockData);
 
-    const { emitEvent } = await import("@workspace/core/lib/task-dispatcher");
-    await emitEvent(`task-status-${task.id}`, {
-      taskId: task.id,
-      status: "Streaming",
-      data: mockData,
-    });
+    const { updateTaskStatus } = await import(
+      "@workspace/core/lib/orchestrator-client"
+    );
+    await updateTaskStatus(task.id, "Streaming", mockData);
 
     if (count >= 3) {
       clearInterval(interval);
-      const isFail = task.payload.command.toLowerCase().includes("fail");
+      const isFail = command.toLowerCase().includes("fail");
       const exitCode = isFail ? 1 : 0;
       term.write(`\r\nTASK_FINISHED_${task.id}_${exitCode}\r\n`);
       term.write("\x1b[1;32mhyperion-demo@web:~$\x1b[0m ");
 
-      await emitEvent(`task-status-${task.id}`, {
-        taskId: task.id,
-        status: exitCode === 0 ? "Completed" : "Failed",
-        error:
-          exitCode === 0
-            ? undefined
-            : `Command exited with non-zero code: ${exitCode}`,
-        data: `\r\nTASK_FINISHED_${task.id}_${exitCode}\r\n`,
-      });
+      if (exitCode === 0) {
+        await updateTaskStatus(
+          task.id,
+          "Completed",
+          undefined,
+          undefined,
+          exitCode
+        );
+      } else {
+        await updateTaskStatus(
+          task.id,
+          "Failed",
+          undefined,
+          `Command exited with non-zero code: ${exitCode}`,
+          exitCode
+        );
+      }
       activeTaskRef.current = null;
     }
   }, 500);
@@ -750,6 +755,19 @@ export function TerminalPane({
     }
 
     async function setupTaskListener() {
+      try {
+        const { registerTerminal } = await import(
+          "@workspace/core/lib/orchestrator-client"
+        );
+        const { useWorkspaceStore } = await import(
+          "@workspace/core/stores/workspace-store"
+        );
+        const workspaceId = useWorkspaceStore.getState().activeWorkspaceId;
+        await registerTerminal(id, workspaceId || "");
+      } catch {
+        // Non-critical: might be browser environment or app loading
+      }
+
       const { listenToEvent } = await import(
         "@workspace/core/lib/task-dispatcher"
       );
@@ -772,6 +790,11 @@ export function TerminalPane({
       if (unlistenTask) {
         unlistenTask();
       }
+      import("@workspace/core/lib/orchestrator-client")
+        .then(({ unregisterTerminal }) => unregisterTerminal(id))
+        .catch(() => {
+          /* ignore */
+        });
       if (typeof window !== "undefined") {
         delete (window as unknown as Record<string, unknown>)[
           `activeTask_${id}`

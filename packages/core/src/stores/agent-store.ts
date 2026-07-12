@@ -15,6 +15,8 @@ export type TerminalState =
   | "Idle"
   | "Planning"
   | "Waiting"
+  | "Dispatched"
+  | "Acknowledged"
   | "Running"
   | "Streaming"
   | "Completed"
@@ -45,6 +47,7 @@ interface AgentState {
   clearLogs: () => void;
   clearMessages: (workspaceId: string) => void;
   clearProviderConfig: () => void;
+  currentRequestId: string;
   health: {
     backend: boolean;
     provider: boolean;
@@ -53,13 +56,16 @@ interface AgentState {
   isOpen: boolean;
   logs: LogEntry[];
   messages: Record<string, AgentMessage[]>; // Mapped by workspace ID
+  orchestrationStatus: string;
   provider: string;
   selectedModel: string;
   setApiKey: (key: string) => void;
   setAvailableModels: (models: string[]) => void;
   setBaseUrl: (url: string) => void;
+  setCurrentRequestId: (requestId: string) => void;
   setHealth: (key: keyof AgentState["health"], status: boolean) => void;
   setOpen: (isOpen: boolean) => void;
+  setOrchestrationStatus: (status: string) => void;
   setProvider: (provider: string) => void;
   setSelectedModel: (model: string) => void;
   setTerminalState: (paneId: string, state: TerminalState) => void;
@@ -83,6 +89,10 @@ export const useAgentStore = create<AgentState>()(
       setBaseUrl: (url) => set({ baseUrl: url }),
       setProvider: (provider) => set({ provider }),
       setSelectedModel: (model) => set({ selectedModel: model }),
+      orchestrationStatus: "idle",
+      currentRequestId: "",
+      setOrchestrationStatus: (status) => set({ orchestrationStatus: status }),
+      setCurrentRequestId: (requestId) => set({ currentRequestId: requestId }),
       isOpen: false,
       toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),
       setOpen: (isOpen: boolean) => set({ isOpen }),
@@ -98,7 +108,7 @@ export const useAgentStore = create<AgentState>()(
         set((state) => {
           const wMsgs = state.messages[workspaceId] || [];
           const existingIdx = wMsgs.findIndex((m) => m.id === message.id);
-          let nextMsgs;
+          let nextMsgs: AgentMessage[];
           if (existingIdx >= 0) {
             nextMsgs = [...wMsgs];
             nextMsgs[existingIdx] = message;
