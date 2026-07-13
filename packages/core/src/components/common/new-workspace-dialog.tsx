@@ -512,7 +512,7 @@ function WorkspaceLivePreview({
   return (
     <div
       className={cn(
-        "relative grid h-[260px] w-full gap-2 overflow-hidden rounded-xl border border-border/20 bg-[#030305] p-2 shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]",
+        "relative grid h-[140px] w-full gap-2 overflow-hidden rounded-xl border border-border/20 bg-[#030305] p-2 shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]",
         gridClass
       )}
     >
@@ -618,7 +618,7 @@ export function NewWorkspaceDialog({
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden border-border/85 bg-[#09090d]/98 p-0 shadow-3xl backdrop-blur-xl focus:outline-none sm:max-w-[950px]">
-        <DialogHeader className="flex-shrink-0 border-border/10 border-b p-6 pb-4">
+        <DialogHeader className="flex-shrink-0 border-border/10 border-b p-5 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 animate-pulse items-center justify-center rounded-xl bg-primary/10 text-primary shadow-primary/5 shadow-sm">
               <LayoutGrid className="size-5" />
@@ -636,15 +636,15 @@ export function NewWorkspaceDialog({
         </DialogHeader>
 
         {/* Scrollable middle container */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/15 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/15 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:w-1.5">
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 gap-6 md:grid-cols-12"
+            className="grid grid-cols-1 gap-4 md:grid-cols-12"
             initial={{ opacity: 0, y: 10 }}
             transition={{ type: "spring", duration: 0.45 }}
           >
             {/* Left Configuration Column */}
-            <div className="space-y-4 md:col-span-7">
+            <div className="space-y-3 md:col-span-7">
               {/* Workspace Name */}
               <div className="grid gap-1.5">
                 <Label
@@ -764,8 +764,8 @@ export function NewWorkspaceDialog({
             </div>
 
             {/* Right column */}
-            <div className="flex flex-col justify-between space-y-4 border-border/20 border-l pl-5 md:col-span-5">
-              <div className="space-y-4">
+            <div className="flex flex-col justify-between space-y-3 border-border/20 border-l pl-5 md:col-span-5">
+              <div className="space-y-3">
                 {/* Auto Command Configuration */}
                 <div className="space-y-1.5">
                   <Label className="flex select-none items-center gap-1.5 font-bold text-[10px] text-muted-foreground/80 uppercase tracking-wider">
@@ -824,7 +824,7 @@ export function NewWorkspaceDialog({
                     </TabsList>
 
                     <TabsContent
-                      className="mt-2.5 max-h-[220px] space-y-1.5 overflow-y-auto pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      className="mt-2.5 max-h-[140px] space-y-1.5 overflow-y-auto pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                       value="runnable"
                     >
                       {AI_AGENTS.map((agent) => {
@@ -891,7 +891,7 @@ export function NewWorkspaceDialog({
                     </TabsContent>
 
                     <TabsContent
-                      className="mt-2.5 max-h-[220px] space-y-2 overflow-y-auto pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      className="mt-2.5 max-h-[140px] space-y-2 overflow-y-auto pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                       value="installer"
                     >
                       {Array.from(
