@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 
 const MAX_ITERATIONS = 20;
@@ -997,9 +999,11 @@ export function AgentSidebar() {
                               </div>
                             </div>
                           ) : (
-                            <p className="whitespace-pre-wrap text-xs leading-relaxed">
-                              {msg.content}
-                            </p>
+                            <div className="prose prose-invert max-w-none break-words leading-relaxed [&_a]:text-primary [&_h1]:mb-2 [&_h1]:text-sm [&_h2]:mb-2 [&_h2]:text-sm [&_h3]:mb-1 [&_h3]:text-xs [&_h4]:text-xs [&_li]:text-xs [&_p]:text-xs [&_pre]:my-2 [&_pre]:rounded-md [&_pre]:bg-[#0c0c0f] [&_pre]:p-2 [&_pre]:text-[10px] [&_pre]:shadow-inner [&_strong]:text-foreground">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
                           )}
                         </div>
 
