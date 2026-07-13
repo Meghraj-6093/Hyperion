@@ -1,17 +1,17 @@
 import { siteConfig } from "@workspace/core/config/site";
 import { ClerkProvider } from "@workspace/core/providers/clerk-provider";
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Lora, Plus_Jakarta_Sans } from "next/font/google";
 import "@workspace/ui/globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  variable: "--font-sans",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fontDisplay = Lora({
   subsets: ["latin"],
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} overflow-hidden antialiased`}
+        className={`${fontSans.variable} ${fontDisplay.variable} font-sans overflow-hidden antialiased`}
       >
         <ClerkProvider>{children}</ClerkProvider>
       </body>

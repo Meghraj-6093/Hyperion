@@ -63,7 +63,7 @@ export function AppSidebar({
                   onClick={() => navigate("/workspace")}
                 >
                   <Logo className="!size-5" />
-                  <span className="font-semibold text-base tracking-tight">
+                  <span className="font-heading font-semibold text-base tracking-tight">
                     {siteConfig.name}
                   </span>
                 </LinkComponent>
