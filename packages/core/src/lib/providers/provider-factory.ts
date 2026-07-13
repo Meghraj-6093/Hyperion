@@ -10,11 +10,26 @@ export interface StreamDelta {
   }>;
 }
 
+export function combineUrl(baseUrl: string, path: string): string {
+  const cleanBase = baseUrl.trim().endsWith("/")
+    ? baseUrl.trim().slice(0, -1)
+    : baseUrl.trim();
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${cleanBase}${cleanPath}`;
+}
+
 export interface AIProvider {
   authenticate(): Promise<boolean>;
   disconnect(): void;
   healthCheck(): Promise<boolean>;
+  authenticate(): Promise<boolean>;
+  disconnect(): void;
+  healthCheck(): Promise<boolean>;
   initialize(apiKey: string, baseUrl: string, model: string): void;
+  sendPrompt(
+    messages: any[],
+    tools?: any[]
+  ): Promise<{ content: string; tool_calls?: any[] }>;
   sendPrompt(
     messages: any[],
     tools?: any[]
@@ -39,6 +54,8 @@ export class OpenAICompatibleProvider implements AIProvider {
   }
 
   private getFetchFn() {
+    const isTauri =
+      typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
     const isTauri =
       typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
     return async (url: string, init?: RequestInit) => {
@@ -68,6 +85,24 @@ export class OpenAICompatibleProvider implements AIProvider {
         this.baseUrl.includes("google") ||
         this.baseUrl.includes("gemini")
       ) {
+        const res = await fetchFn(
+          combineUrl(this.baseUrl, "chat/completions"),
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: this.model || "gemini-1.5-flash",
+              messages: [{ role: "user", content: "Ping" }],
+              max_tokens: 1,
+            }),
+          }
+        );
+        if (res.ok) {
+          (window as any).__lastProviderError = null;
+        } else {
         const res = await fetchFn(`${this.baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
@@ -89,10 +124,15 @@ export class OpenAICompatibleProvider implements AIProvider {
           );
           (window as any).__lastProviderError =
             `Status ${res.status}: ${bodyText || "Empty response"}`;
+          console.error(
+            `Gemini Auth Fail: Status ${res.status}, Body: ${bodyText}`
+          );
+          (window as any).__lastProviderError =
+            `Status ${res.status}: ${bodyText || "Empty response"}`;
         }
         return res.ok;
       }
-      const res = await fetchFn(`${this.baseUrl}/models`, {
+      const res = await fetchFn(combineUrl(this.baseUrl, "models"), {
         method: "GET",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
@@ -117,6 +157,28 @@ export class OpenAICompatibleProvider implements AIProvider {
     messages: any[],
     tools?: any[]
   ): Promise<{ content: string; tool_calls?: any[] }> {
+    const isTauri =
+      typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      const { invoke } = await import("@tauri-apps/api/core");
+      try {
+        const fullContent = await invoke<string>("call_llm_stream", {
+          payload: {
+            provider: this.baseUrl.includes("generativelanguage.googleapis.com")
+              ? "google"
+              : "openai",
+            apiKey: this.apiKey,
+            baseUrl: this.baseUrl,
+            model: this.model,
+            messages,
+          },
+        });
+        return { content: fullContent };
+      } catch (err: any) {
+        throw new Error(err.message || String(err));
+      }
+    }
+
     const fetchFn = this.getFetchFn();
     const requestBody = {
       model: this.model,
@@ -124,7 +186,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       tools: tools && tools.length > 0 ? tools : undefined,
     };
 
-    const res = await fetchFn(`${this.baseUrl}/chat/completions`, {
+    const res = await fetchFn(combineUrl(this.baseUrl, "chat/completions"), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -156,6 +218,34 @@ export class OpenAICompatibleProvider implements AIProvider {
   ): Promise<{ content: string; tool_calls?: any[] }> {
     const isTauri =
       typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const { listen } = await import("@tauri-apps/api/event");
+
+      const unlisten = await listen<string>("llm-delta", (event) => {
+        onDelta({ content: event.payload });
+      });
+
+      try {
+        const fullContent = await invoke<string>("call_llm_stream", {
+          payload: {
+            provider: this.baseUrl.includes("generativelanguage.googleapis.com")
+              ? "google"
+              : "openai",
+            apiKey: this.apiKey,
+            baseUrl: this.baseUrl,
+            model: this.model,
+            messages,
+          },
+        });
+        unlisten();
+        return { content: fullContent };
+      } catch (err: any) {
+        unlisten();
+        throw new Error(err.message || String(err));
+      }
+    }
+
     const requestBody = {
       model: this.model,
       messages,
@@ -163,31 +253,17 @@ export class OpenAICompatibleProvider implements AIProvider {
       stream: true,
     };
 
-    let response: Response;
-    if (isTauri) {
-      const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-      response = await tauriFetch(`${this.baseUrl}/chat/completions`, {
+    const response = await fetch("/api/proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: combineUrl(this.baseUrl, "chat/completions"),
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-        signal,
-      });
-    } else {
-      response = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: `${this.baseUrl}/chat/completions`,
-          method: "POST",
-          headers: { Authorization: `Bearer ${this.apiKey}` },
-          body: requestBody,
-        }),
-        signal,
-      });
-    }
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+        body: requestBody,
+      }),
+      signal,
+    });
 
     if (!response.ok) {
       throw new Error(`Stream Error: ${response.status}`);
@@ -195,7 +271,6 @@ export class OpenAICompatibleProvider implements AIProvider {
 
     const reader = response.body?.getReader();
     if (!reader) {
-      // Fallback if reader is not available
       return this.sendPrompt(messages, tools);
     }
 
@@ -327,7 +402,7 @@ export class AnthropicDirectProvider implements AIProvider {
     try {
       const fetchFn = this.getFetchFn();
       // Fast check with zero tokens message
-      const res = await fetchFn(`${this.baseUrl}/messages`, {
+      const res = await fetchFn(combineUrl(this.baseUrl, "messages"), {
         method: "POST",
         headers: {
           "x-api-key": this.apiKey,
@@ -405,6 +480,26 @@ export class AnthropicDirectProvider implements AIProvider {
     messages: any[],
     tools?: any[]
   ): Promise<{ content: string; tool_calls?: any[] }> {
+    const isTauri =
+      typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      const { invoke } = await import("@tauri-apps/api/core");
+      try {
+        const fullContent = await invoke<string>("call_llm_stream", {
+          payload: {
+            provider: "anthropic",
+            apiKey: this.apiKey,
+            baseUrl: this.baseUrl,
+            model: this.model,
+            messages,
+          },
+        });
+        return { content: fullContent };
+      } catch (err: any) {
+        throw new Error(err.message || String(err));
+      }
+    }
+
     const fetchFn = this.getFetchFn();
     const { system, messages: anthropicMessages } =
       this.convertMessages(messages);
@@ -418,7 +513,7 @@ export class AnthropicDirectProvider implements AIProvider {
       max_tokens: 4000,
     };
 
-    const res = await fetchFn(`${this.baseUrl}/messages`, {
+    const res = await fetchFn(combineUrl(this.baseUrl, "messages"), {
       method: "POST",
       headers: {
         "x-api-key": this.apiKey,
@@ -468,6 +563,32 @@ export class AnthropicDirectProvider implements AIProvider {
   ): Promise<{ content: string; tool_calls?: any[] }> {
     const isTauri =
       typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+    if (isTauri) {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const { listen } = await import("@tauri-apps/api/event");
+
+      const unlisten = await listen<string>("llm-delta", (event) => {
+        onDelta({ content: event.payload });
+      });
+
+      try {
+        const fullContent = await invoke<string>("call_llm_stream", {
+          payload: {
+            provider: "anthropic",
+            apiKey: this.apiKey,
+            baseUrl: this.baseUrl,
+            model: this.model,
+            messages,
+          },
+        });
+        unlisten();
+        return { content: fullContent };
+      } catch (err: any) {
+        unlisten();
+        throw new Error(err.message || String(err));
+      }
+    }
+
     const { system, messages: anthropicMessages } =
       this.convertMessages(messages);
     const anthropicTools = this.convertTools(tools || []);
@@ -481,35 +602,22 @@ export class AnthropicDirectProvider implements AIProvider {
       stream: true,
     };
 
-    let response: Response;
-    const headers = {
-      "x-api-key": this.apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-      "dangerously-allow-developer-user-access": "true",
-    };
-
-    if (isTauri) {
-      const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
-      response = await tauriFetch(`${this.baseUrl}/messages`, {
+    const response = await fetch("/api/proxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: combineUrl(this.baseUrl, "messages"),
         method: "POST",
-        headers,
-        body: JSON.stringify(requestBody),
-        signal,
-      });
-    } else {
-      response = await fetch("/api/proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: `${this.baseUrl}/messages`,
-          method: "POST",
-          headers,
-          body: requestBody,
-        }),
-        signal,
-      });
-    }
+        headers: {
+          "x-api-key": this.apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "dangerously-allow-developer-user-access": "true",
+        },
+        body: requestBody,
+      }),
+      signal,
+    });
 
     if (!response.ok) {
       throw new Error(`Anthropic Stream Error: ${response.status}`);

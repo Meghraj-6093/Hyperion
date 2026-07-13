@@ -228,3 +228,4 @@ pub fn close_terminal(id: String) -> Result<(), String> {
         Err("Terminal session not found".to_string())
     }
 }
+
