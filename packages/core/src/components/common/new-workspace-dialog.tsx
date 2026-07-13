@@ -47,6 +47,8 @@ const LAYOUTS: Record<number, string> = {
   8: "8 Panes",
 };
 
+const PATH_SEPARATOR_REGEX = /[/\\]/;
+
 const _SUGGESTIONS = [
   "E:\\Hyperion",
   "C:\\Users\\hyperion\\projects\\nextjs-app",
@@ -531,7 +533,11 @@ export function NewWorkspaceDialog({
   onOpenChange,
   onCreated,
 }: NewWorkspaceDialogProps) {
-  const { createWorkspace, workspaces } = useWorkspaceStore();
+  const {
+    createWorkspace,
+    workspaces,
+    recentDirectories = [],
+  } = useWorkspaceStore();
   const [name, setName] = useState("");
   const [terminalCount, setTerminalCount] = useState(4);
   const [directory, setDirectory] = useState("E:\\Hyperion");
@@ -554,10 +560,10 @@ export function NewWorkspaceDialog({
     if (open) {
       setName(`Workspace ${workspaces.length + 1}`);
       setTerminalCount(4);
-      setDirectory("E:\\Hyperion");
+      setDirectory(recentDirectories[0] || "");
       setAutoCommand("");
     }
-  }, [open, workspaces.length]);
+  }, [open, workspaces.length, recentDirectories]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -694,21 +700,24 @@ export function NewWorkspaceDialog({
                 </div>
 
                 {/* Directory History list */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                  <span className="flex items-center gap-1 font-bold text-[8.5px] text-muted-foreground/40 uppercase tracking-wider">
-                    <History className="size-2.5" /> Recent:
-                  </span>
-                  {["Hyperion", "nextjs-app", "python-agent"].map((dir) => (
-                    <button
-                      className="rounded border border-border/30 bg-[#07070a]/35 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground/60 transition-all duration-200 hover:border-primary/25 hover:text-primary"
-                      key={dir}
-                      onClick={() => setDirectory(`E:\\${dir}`)}
-                      type="button"
-                    >
-                      {dir}
-                    </button>
-                  ))}
-                </div>
+                {recentDirectories && recentDirectories.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="flex items-center gap-1 font-bold text-[8.5px] text-muted-foreground/40 uppercase tracking-wider">
+                      <History className="size-2.5" /> Recent:
+                    </span>
+                    {recentDirectories.map((dir) => (
+                      <button
+                        className="rounded border border-border/30 bg-[#07070a]/35 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground/60 transition-all duration-200 hover:border-primary/25 hover:text-primary"
+                        key={dir}
+                        onClick={() => setDirectory(dir)}
+                        title={dir}
+                        type="button"
+                      >
+                        {dir.split(PATH_SEPARATOR_REGEX).pop() || dir}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Terminal Layout Grid Selection */}

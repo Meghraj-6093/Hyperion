@@ -30,6 +30,7 @@ interface WorkspaceState {
   ) => Workspace;
   deleteWorkspace: (id: string) => void;
   duplicateWorkspace: (id: string) => void;
+  recentDirectories: string[];
   renameWorkspace: (id: string, name: string) => void;
   setActiveWorkspace: (id: string) => void;
   togglePinWorkspace: (id: string) => void;
@@ -52,6 +53,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     (set) => ({
       activeWorkspaceId: null,
       workspaces: [],
+      recentDirectories: [],
       createWorkspace: (
         name: string,
         terminalCount: number,
@@ -69,10 +71,21 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           autoCommand,
           isPinned: false,
         };
-        set((state) => ({
-          activeWorkspaceId: workspace.id,
-          workspaces: [...state.workspaces, workspace],
-        }));
+        set((state) => {
+          const currentRecent = state.recentDirectories || [];
+          let updatedRecent = currentRecent;
+          if (directory) {
+            updatedRecent = [
+              directory,
+              ...currentRecent.filter((d) => d !== directory),
+            ].slice(0, 5);
+          }
+          return {
+            activeWorkspaceId: workspace.id,
+            workspaces: [...state.workspaces, workspace],
+            recentDirectories: updatedRecent,
+          };
+        });
         return workspace;
       },
       deleteWorkspace: (id: string) => {
