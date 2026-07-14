@@ -35,7 +35,7 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { HeroBackdrop } from "./hero-backdrop";
-import { CtaLink, Eyebrow, GlowCard, HeroStatCard, StatCard } from "./marketing-kit";
+import { CtaLink, Eyebrow, GlowCard, StatCard } from "./marketing-kit";
 import { easeOut, Marquee } from "./motion-primitives";
 import { Terminal, type TerminalLineInput } from "./terminal";
 
@@ -76,32 +76,6 @@ const CAPABILITIES = [
   "Local-first",
 ];
 
-const STATS = [
-  {
-    value: 8,
-    suffix: "",
-    label: "Terminals",
-    description: "Tiled into one adaptive workspace.",
-  },
-  {
-    value: 99.9,
-    suffix: "%",
-    label: "Agent Uptime",
-    description: "Autonomous agents that keep working.",
-  },
-  {
-    value: 10,
-    suffix: "×",
-    label: "Faster Delivery",
-    description: "Parallel agents cut iteration time.",
-  },
-  {
-    value: 100,
-    suffix: "%",
-    label: "Under Command",
-    description: "You approve every merge, always.",
-  },
-];
 
 const FEATURES = [
   {
@@ -496,21 +470,6 @@ export default function HeroSection() {
         </Marquee>
       </section>
 
-      {/* ── Stats ── */}
-      <section className="py-16 md:py-24">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-6 sm:grid-cols-2 lg:grid-cols-4">
-          {STATS.map((stat, i) => (
-            <HeroStatCard
-              description={stat.description}
-              index={i}
-              key={stat.label}
-              label={stat.label}
-              suffix={stat.suffix}
-              value={stat.value}
-            />
-          ))}
-        </div>
-      </section>
 
       {/* ── Feature grid ── */}
       <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">

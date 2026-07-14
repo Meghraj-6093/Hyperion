@@ -56,8 +56,6 @@ export class OpenAICompatibleProvider implements AIProvider {
   private getFetchFn() {
     const isTauri =
       typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-    const isTauri =
-      typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
     return async (url: string, init?: RequestInit) => {
       if (isTauri) {
         const { fetch: tauriFetch } = await import("@tauri-apps/plugin-http");
@@ -102,8 +100,10 @@ export class OpenAICompatibleProvider implements AIProvider {
         );
         if (res.ok) {
           (window as any).__lastProviderError = null;
-        } else {
-        const res = await fetchFn(`${this.baseUrl}/chat/completions`, {
+          return true;
+        }
+
+        const res2 = await fetchFn(`${this.baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${this.apiKey}`,
@@ -115,23 +115,19 @@ export class OpenAICompatibleProvider implements AIProvider {
             max_tokens: 1,
           }),
         });
-        if (res.ok) {
+        if (res2.ok) {
           (window as any).__lastProviderError = null;
         } else {
-          const bodyText = await res.text().catch(() => "");
+          const bodyText = await res2.text().catch(() => "");
           console.error(
-            `Gemini Auth Fail: Status ${res.status}, Body: ${bodyText}`
+            `Gemini Auth Fail: Status ${res2.status}, Body: ${bodyText}`
           );
           (window as any).__lastProviderError =
-            `Status ${res.status}: ${bodyText || "Empty response"}`;
-          console.error(
-            `Gemini Auth Fail: Status ${res.status}, Body: ${bodyText}`
-          );
-          (window as any).__lastProviderError =
-            `Status ${res.status}: ${bodyText || "Empty response"}`;
+            `Status ${res2.status}: ${bodyText || "Empty response"}`;
         }
-        return res.ok;
+        return res2.ok;
       }
+
       const res = await fetchFn(combineUrl(this.baseUrl, "models"), {
         method: "GET",
         headers: {

@@ -4,7 +4,7 @@ import { Reveal } from "@workspace/ui/components/marketing/reveal";
 import { ArrowRight, Compass, GitFork, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import Beams from "../components/beams";
-import { CtaLink, Eyebrow, GlowCard, HeroStatCard } from "../components/marketing-kit";
+import { CtaLink, Eyebrow, GlowCard } from "../components/marketing-kit";
 import {
   revealVariants,
   staggerContainer,
@@ -50,12 +50,6 @@ const beliefs = [
   },
 ];
 
-const stats = [
-  { value: 8, suffix: "", label: "terminal panes per grid" },
-  { value: 8, suffix: "", label: "agents per swarm" },
-  { value: 1, suffix: "", label: "boss agent" },
-  { value: 100, suffix: "%", label: "open source" },
-];
 
 const timeline = [
   {
@@ -149,20 +143,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Animated stats */}
-      <section className="py-16 md:py-24">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, i) => (
-            <HeroStatCard
-              index={i}
-              key={stat.label}
-              label={stat.label}
-              suffix={stat.suffix}
-              value={stat.value}
-            />
-          ))}
-        </div>
-      </section>
 
       {/* Philosophy */}
       <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
