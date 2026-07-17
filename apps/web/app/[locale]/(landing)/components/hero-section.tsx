@@ -438,7 +438,7 @@ export default function HeroSection() {
                   className="relative aspect-15/8 rounded-2xl border border-border/50"
                   height="1080"
                   priority={true}
-                  src="/app-screen-dark.png"
+                  src="/hero_img.png"
                   width="1920"
                 />
                 <BorderBeam
@@ -617,12 +617,21 @@ export default function HeroSection() {
           </div>
         </Reveal>
         <div className="mx-auto mt-10 max-w-[1000px]">
-          <Terminal
-            lines={TERMINAL_LINES}
-            shell="zsh"
-            title="hyperion — swarm"
-            typing={true}
-          />
+          <div className="relative mx-auto w-full overflow-hidden rounded-2xl border border-white/[0.07] bg-background shadow-[0_0_80px_-15px] shadow-primary/20">
+            <div className="aspect-video w-full relative">
+              <video
+                autoPlay
+                className="size-full object-cover"
+                loop
+                muted
+                playsInline
+                src="/hero_video.mp4"
+              />
+              {/* Solid inner border using box-shadow to completely hide the blue desktop in the video without cutting the app content */}
+              <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_0_0_24px_hsl(var(--background)),inset_0_0_40px_40px_hsl(var(--background))]" />
+            </div>
+            <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
+          </div>
         </div>
       </section>
 
