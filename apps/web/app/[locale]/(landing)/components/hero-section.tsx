@@ -625,7 +625,7 @@ export default function HeroSection() {
                 loop
                 muted
                 playsInline
-                src="/hero_video.mp4"
+                src="/heroVideo.mp4"
               />
               {/* Solid inner border using box-shadow to completely hide the blue desktop in the video without cutting the app content */}
               <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_0_0_24px_hsl(var(--background)),inset_0_0_40px_40px_hsl(var(--background))]" />
