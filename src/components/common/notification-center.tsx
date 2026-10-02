@@ -1,7 +1,8 @@
 "use client";
 
-import { Bell } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
+import { AlertTriangle, Bell, CheckCircle2, Info, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/avatar";
 import { Button } from "@/components/button";
 import {
   Empty,
@@ -13,15 +14,121 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/popover";
 import { ScrollArea } from "@/components/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/tabs";
-import { type NotificationItem, notifications } from "@/config/notifications";
 import { useTranslations } from "@/i18n";
+import { useAuthStore } from "@/stores/auth-store";
 import { useNotificationStore } from "@/stores/notification-store";
+
+/** The production gateway / website backend URL */
+const GATEWAY_URL = "https://marshell.bond";
+
+interface ServerMessage {
+  body: string;
+  created_at: string;
+  id: string;
+  level: "info" | "warning" | "success" | "error";
+  title: string;
+}
+
+function levelIcon(level: ServerMessage["level"]) {
+  switch (level) {
+    case "warning":
+      return AlertTriangle;
+    case "success":
+      return CheckCircle2;
+    case "error":
+      return AlertTriangle;
+    default:
+      return Info;
+  }
+}
+
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 export function NotificationCenter() {
   const t = useTranslations("NotificationCenter");
-  const unreadNotifications = notifications.filter((item) => item.unread);
-  const hasUnread = unreadNotifications.length > 0;
   const { isOpen, setOpen } = useNotificationStore();
+  const session = useAuthStore((s) => s.session);
+
+  const [messages, setMessages] = useState<ServerMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchMessages = useCallback(async () => {
+    if (!session?.session_id) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${GATEWAY_URL}/api/notifications`, {
+        headers: { Authorization: `Bearer ${session.session_id}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages ?? []);
+      }
+    } catch {
+      // silently fail — network may be unavailable
+    } finally {
+      setLoading(false);
+    }
+  }, [session?.session_id]);
+
+  // Fetch when popover opens (or when session changes while open)
+  useEffect(() => {
+    if (isOpen) {
+      fetchMessages();
+    }
+  }, [isOpen, fetchMessages]);
+
+  const markRead = useCallback(
+    async (id: string) => {
+      if (!session?.session_id) {
+        return;
+      }
+      // Optimistically remove from UI
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      try {
+        await fetch(`${GATEWAY_URL}/api/notifications/${id}/read`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.session_id}` },
+        });
+      } catch {
+        // ignore — message already removed from UI
+      }
+    },
+    [session?.session_id]
+  );
+
+  const markAllRead = useCallback(async () => {
+    const ids = messages.map((m) => m.id);
+    setMessages([]);
+    for (const id of ids) {
+      try {
+        await fetch(`${GATEWAY_URL}/api/notifications/${id}/read`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session?.session_id}` },
+        });
+      } catch {
+        // ignore
+      }
+    }
+  }, [messages, session?.session_id]);
+
+  const hasUnread = messages.length > 0;
 
   return (
     <Popover onOpenChange={setOpen} open={isOpen}>
@@ -43,7 +150,12 @@ export function NotificationCenter() {
       <PopoverContent align="end" className="hidden w-96 gap-0 p-0 md:flex">
         <div className="flex items-center justify-between border-b p-4">
           <span className="font-semibold text-sm">{t("title")}</span>
-          <Button className="h-auto p-0 text-xs" variant="link">
+          <Button
+            className="h-auto p-0 text-xs"
+            disabled={!hasUnread}
+            onClick={markAllRead}
+            variant="link"
+          >
             {t("markAllRead")}
           </Button>
         </div>
@@ -58,13 +170,25 @@ export function NotificationCenter() {
 
           <TabsContent value="all">
             <ScrollArea className="h-80 p-3 pt-0">
-              <NotificationList items={notifications} />
+              {loading ? (
+                <div className="flex h-20 items-center justify-center">
+                  <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <NotificationList items={messages} onRead={markRead} />
+              )}
             </ScrollArea>
           </TabsContent>
 
           <TabsContent value="unread">
             <ScrollArea className="h-80 p-3 pt-0">
-              <NotificationList items={unreadNotifications} />
+              {loading ? (
+                <div className="flex h-20 items-center justify-center">
+                  <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <NotificationList items={messages} onRead={markRead} />
+              )}
             </ScrollArea>
           </TabsContent>
         </Tabs>
@@ -72,9 +196,13 @@ export function NotificationCenter() {
         <div className="border-t px-3 py-2">
           <Button
             className="w-full justify-center text-xs"
+            onClick={fetchMessages}
             size="sm"
             variant="ghost"
           >
+            {loading ? (
+              <Loader2 className="mr-1.5 size-3 animate-spin" />
+            ) : null}
             {t("seeAll")}
           </Button>
         </div>
@@ -83,7 +211,13 @@ export function NotificationCenter() {
   );
 }
 
-function NotificationList({ items }: { items: NotificationItem[] }) {
+function NotificationList({
+  items,
+  onRead,
+}: {
+  items: ServerMessage[];
+  onRead: (id: string) => void;
+}) {
   const t = useTranslations("NotificationCenter");
 
   if (!items.length) {
@@ -102,50 +236,41 @@ function NotificationList({ items }: { items: NotificationItem[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      {items.map((item) => (
-        <button
-          className="flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors hover:bg-muted/50"
-          key={item.id}
-          type="button"
-        >
-          <Avatar className="size-9 shrink-0">
-            {item.avatar && <AvatarImage alt={item.title} src={item.avatar} />}
-            <AvatarFallback className="bg-transparent">
-              {item.icon ? (
-                <item.icon className="size-4 text-muted-foreground" />
-              ) : (
-                <Bell className="size-4 text-muted-foreground" />
-              )}
-            </AvatarFallback>
-          </Avatar>
+      {items.map((item) => {
+        const Icon = levelIcon(item.level);
+        return (
+          <button
+            className="flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors hover:bg-muted/50"
+            key={item.id}
+            onClick={() => onRead(item.id)}
+            title="Click to dismiss"
+            type="button"
+          >
+            <Avatar className="size-9 shrink-0">
+              <AvatarFallback className="bg-transparent">
+                <Icon className="size-4 text-muted-foreground" />
+              </AvatarFallback>
+            </Avatar>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <span
-              className={`truncate text-sm ${
-                item.unread
-                  ? "font-medium text-foreground"
-                  : "font-normal text-muted-foreground"
-              }`}
-            >
-              {t(item.title as Parameters<typeof t>[0])}
-            </span>
-            <p className="line-clamp-2 text-muted-foreground text-xs leading-snug">
-              {t(item.description as Parameters<typeof t>[0])}
-            </p>
-          </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="truncate font-medium text-sm text-foreground">
+                {item.title}
+              </span>
+              <p className="line-clamp-2 text-muted-foreground text-xs leading-snug">
+                {item.body}
+              </p>
+            </div>
 
-          <div className="flex shrink-0 flex-col items-end gap-3">
-            <span className="text-muted-foreground text-xs">
-              {t(item.time as Parameters<typeof t>[0])}
-            </span>
-            {item.unread ? (
+            <div className="flex shrink-0 flex-col items-end gap-3">
+              <span className="text-muted-foreground text-xs">
+                {formatRelativeTime(item.created_at)}
+              </span>
+              {/* unread dot */}
               <span className="size-2 rounded-full bg-primary" />
-            ) : (
-              <span className="size-2 rounded-full bg-transparent" />
-            )}
-          </div>
-        </button>
-      ))}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
